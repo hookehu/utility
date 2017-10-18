@@ -31,6 +31,7 @@ class EXML2JS:
 				
 		def proc(self):
 				#self.convert_folder(self.input_path)
+				self.driver.quit()
 				pass
 				
 		def convert_folder(self, path):

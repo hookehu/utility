@@ -10,6 +10,11 @@ class Rectangle:
 		y = 0
 		width = 0
 		height = 0
+		offX = 0
+		offY = 0
+		origin_width = 0
+		origin_height = 0
+		arena = 0
 		
 		def __init__(self):
 			self.name = ""
@@ -22,7 +27,24 @@ class Rectangle:
 			rst.y = self.y
 			rst.width = self.width
 			rst.height = self.height
+			rst.arena = self.arena
+			rst.offX = self.offX
+			rst.offY = self.offY
+			rst.origin_width = self.origin_width
+			rst.origin_height = self.origin_height
 			return rst
+			
+		def to_dict(self):
+				rst = {}
+				rst['x'] = self.x
+				rst['y'] = self.y
+				rst['w'] = self.width
+				rst['h'] = self.height
+				rst['offX'] = self.offX
+				rst['offY'] = self.offY
+				rst['sourceW'] = self.origin_width
+				rst['sourceH'] = self.origin_height
+				return rst
 			
 class FreeRectangleChoiceHeuristic:
 		BestShortSideFit = 0 #< -BSSF: Positions the Rectangle against the short side of a free Rectangle into which it fits the best.
@@ -73,10 +95,13 @@ class MaxRectsBinPack:
 						return self.count(n / 2)
 				return n
 				 
-		def insert(self, width, height, method, name):
+		def insert(self, rect, method):
+				width = rect.width
+				height = rect.height
+				name = rect.name
 				newNode  = Rectangle()
-				self.score1 = 0
-				self.score2 = 0
+				score1 = 0
+				score2 = 0
 				if method == FreeRectangleChoiceHeuristic.BestShortSideFit: 
 						newNode = self.findPositionForNewNodeBestShortSideFit(width, height)
 				elif method == FreeRectangleChoiceHeuristic.BottomLeftRule: 
@@ -88,6 +113,11 @@ class MaxRectsBinPack:
 				elif method == FreeRectangleChoiceHeuristic.BestAreaFit: 
 						newNode = self.findPositionForNewNodeBestAreaFit(width, height, score1, score2)
 				newNode.name = name
+				newNode.offX = rect.offX
+				newNode.offY = rect.offY
+				newNode.origin_width = rect.origin_width
+				newNode.origin_height = rect.origin_height
+				newNode.arena = rect.arena
 				if newNode.height == 0:
 						print "not posi for set"
 						return newNode
@@ -108,6 +138,11 @@ class MaxRectsBinPack:
 								score2 = 0
 								newNode = self.scoreRectangle(Rectangles[i].width, Rectangles[i].height, method, score1, score2)
 								newNode.name = Rectangles[i].name
+								newNode.offX = Rectangles[i].offX
+								newNode.offY = Rectangles[i].offY
+								newNode.origin_width = Rectangles[i].origin_width
+								newNode.origin_height = Rectangles[i].origin_height
+								newNode.arena = Rectangles[i].arena
 								if score1 < bestScore1 or (score1 == bestScore1 and score2 < bestScore2):
 										bestScore1 = score1
 										bestScore2 = score2
@@ -413,22 +448,194 @@ class Demo:
 		res_path = "E:/Temp/abc"
 		#生成的图集存放目录
 		output_path = "E:/Temp"
-		cells = []
 		total_arena = 0
-		MAX_ARENA = 2048 * 2048
+		MAX_SIZE = 1024
+		MIN_SIZE = 128
+		BASE_ALPHA = 15
+		width = 128
+		height = 128
+		count = 0
 		
 		def __init__(self):
 				pass
+				
+		def get_output_name(self):
+				name = 'sheet' + str(self.count) + '.png'
+				jsonname = 'sheet' + str(self.count) + '.json'
+				self.count = self.count + 1
+				return name, jsonname
+				
+		def proc(self):
+				files = dircache.listdir(self.res_path)
+				self.maxRect = MaxRectsBinPack(self.width, self.height, False)
+				rects = []
+				self.maps = {}
+				for f in files:
+						p = self.res_path + '/' + f
+						img = Image.open(p)
+						img_width, img_height = img.size
+						minx, maxx, miny, maxy = self.get_edge(img)
+						rw = maxx - minx
+						rh = maxy - miny
+						img.close()
+						self.total_arena = self.total_arena + img_width * img_height
+						rect = Rectangle()
+						rect.name = f
+						rect.origin_width = img_width
+						rect.origin_height = img_height
+						rect.offX = minx
+						rect.offY = miny
+						rect.width = rw
+						rect.height = rh
+						rect.arena = rw * rh
+						if rw > 450 or rh > 450:#超过尺寸不打图集
+								continue
+						rects.append(rect)
+						self.maps[f] = p
+				rects = sorted(rects, key=lambda s:s.arena)
+				while True:
+						rst = self.proc_rects(rects)
+						if rst:#处理完成
+								break
+						if self.width == self.height and self.width == self.MAX_SIZE:
+								print "next sheet"
+								self.output()
+								self.width = self.MIN_SIZE
+								self.height = self.MIN_SIZE
+								continue
+						if self.width == self.height:
+								self.get_next_width()
+								self.maxRect = MaxRectsBinPack(self.width, self.height, False)
+								continue
+						else:
+								self.get_next_height()
+								self.maxRect = MaxRectsBinPack(self.width, self.height, False)
+								continue
+				self.output()
+				
+		def output(self):
+				oi = Image.new("RGBA", (self.width, self.height), 0)
+				print self.width, self.height
+				od = {}
+				od['frames'] = {}
+				for r in self.maxRect.usedRectangles:
+						i = Image.open(self.maps[r.name])
+						crop = i.crop((r.offX, r.offY, r.width, r.height))
+						oi.paste(crop, (r.x, r.y))
+						i.close()
+						od['frames'][r.name.replace('.', '_')] = r.to_dict()
+				oimg_name, ojson_name = self.get_output_name()
+				oi.save(self.output_path + "/" + oimg_name)
+				od["file"] = oimg_name
+				jsonstr = json.dumps(od, indent=2, encoding="utf-8")
+				fd = open(self.output_path + "/" + ojson_name, 'wb')
+				fd.write(jsonstr);
+				fd.close();
+				
+		def proc_rects(self, rects):
+				dels = []
+				for rect in rects:
+						dels.append(rect)
+						rst = self.maxRect.insert(rect, FreeRectangleChoiceHeuristic.BestLongSideFit);
+						if rst.height == 0:
+								if self.width == self.height == self.MAX_SIZE:
+										#生成下一个sheet
+										for d in dels:
+												rects.remove(d)
+								return False
+				return True
+				
+		def get_next_width(self):
+				self.width = self.width * 2
+				if self.width > self.MAX_SIZE:
+						self.width = self.MAX_SIZE
+		
+		def get_next_height(self):
+				self.height = self.height * 2
+				if self.height > self.MAX_SIZE:
+						self.height = self.MAX_SIZE
+						
+		def get_edge(self, img):
+				alpha = img.load()
+				w, h = img.size
+				minx = 0
+				maxx = w
+				miny = 0
+				maxy = h
+				x = 0
+				find = False
+				while x < w:
+						y = 0
+						while y < h:
+								p = alpha[x, y]
+								if len(p) <= 3:
+										p = (p[0], p[1], p[2], 255)
+								if p[3] > self.BASE_ALPHA:
+										minx = x
+										find = True
+										break
+								y = y + 1
+						if find:
+								break
+						x = x + 1
+				find = False
+				x = w - 1
+				while x >= 0:
+						y = 0
+						while y < h:
+								p = alpha[x, y]
+								if len(p) <= 3:
+										p = (p[0], p[1], p[2], 255)
+								if p[3] > self.BASE_ALPHA:
+										maxx = x
+										find = True
+										break
+								y = y + 1
+						if find:
+								break
+						x = x - 1
+				find = False
+				y = 0
+				while y < h:
+						x = 0
+						while x < w:
+								p = alpha[x, y]
+								if len(p) <= 3:
+										p = (p[0], p[1], p[2], 255)
+								if p[3] > self.BASE_ALPHA:
+										miny = y
+										find = True
+										break
+								x = x + 1
+						if find:
+								break
+						y = y + 1
+				find = False
+				y = h - 1
+				while y >= 0:
+						x = 0
+						while x < w:
+								p = alpha[x, y]
+								if len(p) <= 3:
+										p = (p[0], p[1], p[2], 255)
+								if p[3] > self.BASE_ALPHA:
+										maxy = y
+										find = True
+										break
+								x = x + 1
+						if find:
+								break
+						y = y - 1
+				return minx, maxx, miny, maxy
 						
 		def begin(self):
 				files = dircache.listdir(self.res_path)
-				maxRect = MaxRectsBinPack(256, 256, False)
+				maxRect = MaxRectsBinPack(512, 256, False)
 				rects = []
 				maps = {}
 				for f in files:
 					p = self.res_path + '/' + f
 					img = Image.open(p)
-					self.cells.append(img)
 					img_width, img_height = img.size
 					self.total_arena = self.total_arena + img_width * img_height
 					rect = Rectangle()
@@ -438,7 +645,7 @@ class Demo:
 					rects.append(rect)
 					maps[f] = img
 				maxRect.insert2(rects, [], FreeRectangleChoiceHeuristic.BestLongSideFit)
-				oi = Image.new("RGBA", (256, 256), 0)
+				oi = Image.new("RGBA", (512, 256), 0)
 				for r in maxRect.usedRectangles:
 					print str(r.x) + "_" + str(r.y) + "_" + str(r.width) + "_" + str(r.height)
 					i = maps[r.name]
@@ -450,5 +657,5 @@ class Demo:
 						
 if __name__ == "__main__":
 	d = Demo()
-	d.begin()
+	d.proc()
 	print "success"
