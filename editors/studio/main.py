@@ -1,30 +1,42 @@
 #-*- coding:utf-8 -*-
 import wx
 import os
-class my_frame(wx.Frame):
+import setting
+
+class MyFrame(wx.Frame):
 		"""We simple derive a new class of Frame"""
-		def __init__(self,parent, title):
-				wx.Frame.__init__(self, parent, title=title,size=(300,200))
-				self.control = wx.TextCtrl(self, style=wx.TE_MULTILINE,)
+		def __init__(self, parent, title):
+				wx.Frame.__init__(self, parent, title=title,size=(300,300))
+				self.cur_frame = None
+				self.init_panels()
 				self.init_menu()
 				self.init_statusbar()
 				self.Show(True)
 				
+		def init_panels(self):
+				#self.tree_panel = TreePanel(self)
+				pass
+				
+		def gen_on_menu(self, container, k):
+				def func(self):
+						container.on_menu(k)
+				return func
+				
 		def init_menu(self):
 				filemenu = wx.Menu()
-				menu_open = filemenu.Append(wx.ID_OPEN, U"打开文件", " ")
-				menu_save = filemenu.Append(wx.ID_SAVE, U"保存修改",)
-				menu_exit = filemenu.Append(wx.ID_EXIT, "Exit", "Termanate the program")
+				for k, v in setting.APPS.items():
+						menu = filemenu.Append(wx.ID_ANY, k, " ")
+						print menu
+						self.Bind(wx.EVT_MENU, self.gen_on_menu(self, k), menu)
+						
+				menu_exit = filemenu.Append(wx.ID_ANY, "Exit", "Termanate the program")
 				filemenu.AppendSeparator()
-				menu_about = filemenu.Append(wx.ID_ABOUT, "About", "Information about this program")#设置菜单的内容
+				menu_about = filemenu.Append(wx.ID_ANY, "About", "Information about this program")#设置菜单的内容
 				
 				menuBar = wx.MenuBar()
-				menuBar.Append(filemenu, u"文件")
+				menuBar.Append(filemenu, u"编辑器")
 				self.SetMenuBar(menuBar)#创建菜单条
-				self.Bind(wx.EVT_MENU, self.on_open, menu_open)
-				self.Bind(wx.EVT_MENU, self.on_about, menu_about)
 				self.Bind(wx.EVT_MENU, self.on_exit, menu_exit)#把出现的事件，同需要处理的函数连接起来
-				self.Bind(wx.EVT_MENU, self.on_save, menu_save)
 				
 		def init_statusbar(self):
 				self.CreateStatusBar()#创建窗口底部的状态栏
@@ -36,6 +48,16 @@ class my_frame(wx.Frame):
 
 		def on_exit(self,e):
 				self.Close(True)
+				
+		def on_menu(self, key):
+				pkg = setting.APPS.get(key, None)
+				print key, pkg
+				if pkg:
+						p = __import__(pkg)
+						if self.cur_frame:
+								self.cur_frame.Close()
+								self.cur_frame = None
+						self.cur_frame = p.init(self)
 				
 		def on_open(self,e):
 				"""open a file"""
@@ -60,8 +82,8 @@ class my_frame(wx.Frame):
 				dlg = wx.MessageDialog(self, u"文件已经成功保存", u"消息提示", wx.OK)
 				dlg.ShowModal()
 				dlg.Destroy()
-				
+
 if __name__ == "__main__":
 		app = wx.App(False)
-		frame = my_frame(None, '编辑器')
+		frame = MyFrame(None, '编辑器')
 		app.MainLoop()
