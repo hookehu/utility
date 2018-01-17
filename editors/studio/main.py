@@ -6,7 +6,7 @@ import setting
 class MyFrame(wx.Frame):
 		"""We simple derive a new class of Frame"""
 		def __init__(self, parent, title):
-				wx.Frame.__init__(self, parent, title=title,size=(300,300))
+				wx.Frame.__init__(self, parent, title=title,size=(600,600))
 				self.cur_frame = None
 				self.init_panels()
 				self.init_menu()

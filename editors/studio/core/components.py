@@ -1,4 +1,7 @@
 #-*- coding:utf-8 -*-
+import wx
+import os
+
 class TreeCtrlData:
 		def __init__(self):
 				self.name = ''
@@ -84,7 +87,7 @@ class TreePanel(wx.Panel):
 				self.tree = MyTreeCtrl(self, -1, size=size, style=wx.TR_MULTIPLE|wx.TR_HAS_BUTTONS|wx.TR_FULL_ROW_HIGHLIGHT|wx.TR_HAS_VARIABLE_ROW_HEIGHT|wx.TR_ROW_LINES)
 				#self.tree.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_open)
 				self.tree.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.right_click)
-				self.init_data()
+				#self.init_data()
 				
 		def init_data(self):
 				root = TreeCtrlData()
@@ -106,7 +109,29 @@ class TreePanel(wx.Panel):
 				pass
 				
 		def init_dir(self, path):
-				pass
+				root = TreeCtrlData()
+				root.name = path
+				files = os.listdir(path)
+				for file in files:
+						p = path + '/' + file
+						node = TreeCtrlData()
+						node.name = file
+						if os.path.isdir(p):
+								node.is_folder = True
+								self.get_node(node, p)
+						root.children.append(node)
+				self.tree.refresh_data(root)
+				
+		def get_node(self, parent, path):
+				files = os.listdir(path)
+				for file in files:
+						p = path + '/' + file
+						node = TreeCtrlData()
+						node.name = file
+						if os.path.isdir(p):
+								node.is_folder = True
+								self.get_node(node, p)
+						parent.children.append(node)
 				
 		def get_root(self, path):
 				pass
@@ -118,3 +143,7 @@ class TreePanel(wx.Panel):
 		def right_click(self, evt):
 				paths = self.tree.GetSelections()
 				print paths
+				
+		def SetSize(self, size):
+				wx.Panel.SetSize(self, size)
+				self.tree.SetSize(size)
