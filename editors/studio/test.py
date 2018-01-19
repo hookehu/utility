@@ -1,61 +1,66 @@
-import wx  
-class Example(wx.Frame):  
-    def __init__(self,parent,title):  
-        super(Example,self).__init__(parent,title=title,size=(500,300))  
-        self.InitUI()  
-        self.Centre()  
-        self.Show()  
-    def InitUI(self):  
-        panel = wx.Panel(self)  
-          
-        font = wx.SystemSettings.GetFont(wx.SYS_SYSTEM_FONT)  
-        font.SetPointSize(9)  
-          
-        vbox = wx.BoxSizer(wx.VERTICAL)  
-          
-        hbox1 = wx.BoxSizer(wx.HORIZONTAL)  
-        st1 = wx.StaticText(panel,label='Class Name')  
-        st1.SetFont(font)  
-          
-        hbox1.Add(st1,flag=wx.RIGHT,border=8)  
-        tc = wx.TextCtrl(panel)  
-        hbox1.Add(tc,proportion=1)  
-        vbox.Add(hbox1,flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.TOP,border=10)  
-          
-        vbox.Add((-1,10))  
-          
-        hbox3 = wx.BoxSizer(wx.HORIZONTAL)  
-        tc2 = wx.TextCtrl(panel, style=wx.TE_MULTILINE)  
-        hbox3.Add(tc2, proportion=1, flag=wx.EXPAND)  
-        vbox.Add(hbox3, proportion=1, flag=wx.LEFT|wx.RIGHT|wx.EXPAND,   
-            border=10)  
-  
-        vbox.Add((-1, 25))  
-  
-        hbox4 = wx.BoxSizer(wx.HORIZONTAL)  
-        cb1 = wx.CheckBox(panel, label='Case Sensitive')  
-        cb1.SetFont(font)  
-        hbox4.Add(cb1)  
-        cb2 = wx.CheckBox(panel, label='Nested Classes')  
-        cb2.SetFont(font)  
-        hbox4.Add(cb2, flag=wx.LEFT, border=10)  
-        cb3 = wx.CheckBox(panel, label='Non-Project classes')  
-        cb3.SetFont(font)  
-        hbox4.Add(cb3, flag=wx.LEFT, border=10)  
-        vbox.Add(hbox4, flag=wx.LEFT, border=10)  
-  
-        vbox.Add((-1, 25))  
-  
-        hbox5 = wx.BoxSizer(wx.HORIZONTAL)  
-        btn1 = wx.Button(panel, label='Ok', size=(70, 30))  
-        hbox5.Add(btn1)  
-        btn2 = wx.Button(panel, label='Close', size=(70, 30))  
-        hbox5.Add(btn2, flag=wx.LEFT|wx.BOTTOM, border=5)  
-        vbox.Add(hbox5, flag=wx.ALIGN_RIGHT|wx.RIGHT, border=10)  
-          
-        panel.SetSizer(vbox)  
-          
-if __name__ == '__main__':  
-    app = wx.App()  
-    Example(None,title="gotoclass")  
-    app.MainLoop() 
+#-*-coding: UTF-8 -*-
+#------------------------------------------------------
+#Purpose: nothing....
+
+#Author: 阿Bin先生
+#Created: 2017年5月21日
+#------------------------------------------------------
+import wx
+
+class Smiley(wx.PyControl):
+    def __init__(self, parent, size=(100, 100)):
+        super(Smiley, self).__init__(parent,
+        size=size,
+        style=wx.NO_BORDER)
+        # Event Handlers
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+
+    def OnPaint(self, event):
+        """Draw the image on to the panel"""
+        dc = wx.BufferedPaintDC(self) # Must create a PaintDC
+        # Get the working rectangle we can draw in
+        rect = self.GetClientRect()
+        # Setup the DC
+        dc.SetPen(wx.BLACK_PEN) # for drawing lines / borders
+        yellowbrush = wx.Brush(wx.Colour(255, 255, 0))
+        dc.SetBrush(yellowbrush) # Yellow fill
+
+        cx = (rect.width / 2) + rect.x
+        cy = (rect.width / 2) + rect.y
+        radius = min(rect.width, rect.height) / 2
+        dc.DrawCircle(cx, cy, radius)
+        eyesz = (rect.width / 8, rect.height / 8)
+        eyepos = (cx / 2, cy / 2)
+        dc.SetBrush(wx.BLUE_BRUSH)
+        dc.DrawRectangle(eyepos[0], eyepos[1],
+        eyesz[0], eyesz[1])
+        eyepos = (eyepos[0] + (cx - eyesz[0]), eyepos[1])
+        dc.DrawRectangle(eyepos[0], eyepos[1],
+        eyesz[0], eyesz[1])
+        dc.SetBrush(yellowbrush)
+        startpos = (cx / 2, (cy / 2) + cy)
+        endpos = (cx + startpos[0], startpos[1])
+        dc.DrawArc(startpos[0], startpos[1],
+        endpos[0], endpos[1], cx, cy)
+        dc.SetPen(wx.TRANSPARENT_PEN)
+        dc.DrawRectangle(startpos[0], cy,
+        endpos[0] - startpos[0],
+        startpos[1] - cy)
+
+class MyFrame(wx.Frame):
+    def __init__(self, parent, *args, **kwargs):
+        super(MyFrame, self).__init__(parent, *args, **kwargs)
+        # Attributes
+        self.Panel = wx.Panel(self)
+        Smiley(self.Panel)
+
+class MyApp(wx.App):
+    def OnInit(self):
+        self.frame = MyFrame(None, title="DrawShapes",size = [500, 500])
+        self.SetTopWindow(self.frame)
+        self.frame.Show()
+        return True
+
+if __name__ == "__main__":
+    app = MyApp(False)
+    app.MainLoop()

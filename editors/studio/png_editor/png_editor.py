@@ -6,7 +6,9 @@ from core import components
 class png_editor(wx.Panel):
 		def __init__(self, parent):
 				wx.Panel.__init__(self, parent, size = parent.Size, style=wx.DOUBLE_BORDER)
-				
+				self.draging = False
+				self.pen=wx.Pen(wx.Colour(0, 255, 0), 2) 
+				self.brush = wx.Brush(wx.Colour(0, 255, 255, 100), style=wx.BRUSHSTYLE_TRANSPARENT)
 				self.init_ui()
 				self.init_data()
 				self.Bind(wx.EVT_SIZE, self.on_size)
@@ -28,6 +30,19 @@ class png_editor(wx.Panel):
 				
 				self.edit_panel = wx.Panel(self, style=wx.DOUBLE_BORDER)
 				self.right_sizer.Add(self.edit_panel, flag=wx.EXPAND)
+				
+				self.work_panel = wx.Panel(self, style=wx.DOUBLE_BORDER)
+				self.right_sizer.Add(self.work_panel, flag=wx.EXPAND)
+				self.bmps = [wx.Bitmap('frame_00001.png', wx.BITMAP_TYPE_PNG), wx.Bitmap('frame_00002.png', wx.BITMAP_TYPE_PNG), wx.Bitmap('frame_00003.png', wx.BITMAP_TYPE_PNG)]
+				
+				self.mask = wx.Panel(self.work_panel, size=self.bmps[0].Size)
+				
+				self.mask.Bind(wx.EVT_LEFT_DOWN, self.on_drag_begin)
+				self.mask.Bind(wx.EVT_MOTION, self.on_draging)
+				self.mask.Bind(wx.EVT_LEFT_UP, self.on_drag_end)
+				self.mask.Bind(wx.EVT_PAINT, self.on_paint, self.mask)
+				
+				self.buffer=wx.Bitmap(self.mask.Size[0], self.mask.Size[1])
 				
 				self.x = wx.TextCtrl(self.edit_panel, size = (80, 30))
 				self.edit_sizer.Add(self.x, border=10)
@@ -54,6 +69,45 @@ class png_editor(wx.Panel):
 		
 		def on_modify_click(self, evt):
 				print "click"
+				
+		def on_drag_begin(self, evt):
+				#print "drag begin", evt.GetPosition()
+				 
+				self.pre_pos = evt.GetPosition()
+				self.draging = True
+				
+		def on_draging(self, evt):
+				if not self.draging:
+						return
+				self.cur_pos = evt.GetPosition()
+				#print 'duck'
+				
+				dc = wx.BufferedDC(None, self.buffer, wx.BUFFER_VIRTUAL_AREA)  
+				dc.SetBackground(self.brush)
+				dc.Clear()
+				for bp in self.bmps:
+						dc.DrawBitmap(bp, 0, 0, True)
+				dc.SetPen(self.pen)
+				#dc.DrawRectangle(self.pre_pos[0], self.pre_pos[1], self.cur_pos[0] - self.pre_pos[0], self.cur_pos[1] - self.pre_pos[1])
+				w = self.cur_pos[0] - self.pre_pos[0]
+				h = self.cur_pos[1] - self.pre_pos[1]
+				dc.DrawLine(self.pre_pos, self.pre_pos + (w, 0))
+				dc.DrawLine(self.pre_pos + (w, 0), self.cur_pos)
+				dc.DrawLine(self.cur_pos, self.pre_pos + (0, h))
+				dc.DrawLine(self.pre_pos, self.pre_pos + (0, h))
+				self.mask.Refresh()
+				pass
+				
+		def on_drag_end(self, evt):
+				self.draging = False
+				self.pre_pos = None
+				
+				pass
+				
+		def on_paint(self, evt):
+				#print 'draw', self.work_panel.GetChildren()
+				wx.BufferedPaintDC(self.mask, self.buffer)
+				pass
 				
 def init(parent):
 		frame = png_editor(parent)
