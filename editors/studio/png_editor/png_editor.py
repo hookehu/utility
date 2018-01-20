@@ -7,8 +7,9 @@ class png_editor(wx.Panel):
 		def __init__(self, parent):
 				wx.Panel.__init__(self, parent, size = parent.Size, style=wx.DOUBLE_BORDER)
 				self.draging = False
+				self.result_panel = None
 				self.pen=wx.Pen(wx.Colour(0, 255, 0), 2) 
-				self.brush = wx.Brush(wx.Colour(0, 255, 255, 100), style=wx.BRUSHSTYLE_TRANSPARENT)
+				self.brush = wx.Brush(wx.Colour(255, 255, 255, 0), style=wx.BRUSHSTYLE_TRANSPARENT)
 				self.init_ui()
 				self.init_data()
 				self.Bind(wx.EVT_SIZE, self.on_size)
@@ -31,8 +32,14 @@ class png_editor(wx.Panel):
 				self.edit_panel = wx.Panel(self, style=wx.DOUBLE_BORDER)
 				self.right_sizer.Add(self.edit_panel, flag=wx.EXPAND)
 				
+				
+				
 				self.work_panel = wx.Panel(self, style=wx.DOUBLE_BORDER)
 				self.right_sizer.Add(self.work_panel, flag=wx.EXPAND)
+				
+				self.result_panel = wx.Panel(self, style=wx.DOUBLE_BORDER)
+				self.right_sizer.Add(self.result_panel, flag=wx.EXPAND)
+				
 				self.bmps = [wx.Bitmap('frame_00001.png', wx.BITMAP_TYPE_PNG), wx.Bitmap('frame_00002.png', wx.BITMAP_TYPE_PNG), wx.Bitmap('frame_00003.png', wx.BITMAP_TYPE_PNG)]
 				
 				self.mask = wx.Panel(self.work_panel, size=self.bmps[0].Size)
@@ -100,8 +107,25 @@ class png_editor(wx.Panel):
 				
 		def on_drag_end(self, evt):
 				self.draging = False
-				self.pre_pos = None
+				w = self.cur_pos[0] - self.pre_pos[0]
+				h = self.cur_pos[1] - self.pre_pos[1]
+				pw = w * len(self.bmps)
+				ph = h
+				self.result_panel.DestroyChildren()
+				self.result_panel.SetSize(pw, ph)
+				nb = wx.Bitmap(pw, ph)
+				#dc = wx.BufferedDC(None, nb, wx.BUFFER_VIRTUAL_AREA)
+				dc = wx.MemoryDC()
+				dc.SelectObject(nb)
+				dc.SetBackground(self.brush)
+				dc.Clear()
+				i = 0
+				for bmp in self.bmps:
+						dc.DrawBitmap(bmp.GetSubBitmap(wx.Rect(self.pre_pos, self.cur_pos)), i * w, 0, True)
+						i = i + 1
+				wx.StaticBitmap(self.result_panel, wx.ID_ANY, nb)
 				
+				self.pre_pos = None
 				pass
 				
 		def on_paint(self, evt):
