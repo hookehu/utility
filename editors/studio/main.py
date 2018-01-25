@@ -12,6 +12,11 @@ class MyFrame(wx.Frame):
 				self.init_menu()
 				self.init_statusbar()
 				self.Show(True)
+				self.Bind(wx.EVT_SIZE, self.on_size)
+				
+		def on_size(self, evt):
+				if self.cur_frame:
+						self.cur_frame.SetSize(self.Size)
 				
 		def init_panels(self):
 				#self.tree_panel = TreePanel(self)

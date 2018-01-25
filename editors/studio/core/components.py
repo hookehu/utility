@@ -5,6 +5,7 @@ import os
 class TreeCtrlData:
 		def __init__(self):
 				self.name = ''
+				self.path = ''
 				self.is_folder = False
 				self.is_open = False
 				self.children = []
@@ -16,8 +17,6 @@ class MyTreeCtrl(wx.TreeCtrl):
 				wx.TreeCtrl.__init__(self, parent, id, pos, size, style, validator, name)
 				self.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.on_collapsed)
 				self.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.on_expanded)
-				self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.on_right_click)
-				self.Bind(wx.EVT_TREE_ITEM_MENU, self.on_menu)
 				self.init_ui()
 				
 		def init_ui(self):
@@ -75,21 +74,17 @@ class MyTreeCtrl(wx.TreeCtrl):
 						return
 				data.is_open = True
 				
-		def on_menu(self, evt):
-				print 'on_menu'
-				
-		def on_right_click(self, evt):
-				print "fuck"
 				
 class TreePanel(wx.Panel):
 		def __init__(self, parent, id=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=wx.TAB_TRAVERSAL, name=""):
 				wx.Panel.__init__(self, parent, id, pos, size, style, name)
 				self.tree = MyTreeCtrl(self, -1, size=size, style=wx.TR_MULTIPLE|wx.TR_HAS_BUTTONS|wx.TR_FULL_ROW_HIGHLIGHT|wx.TR_HAS_VARIABLE_ROW_HEIGHT|wx.TR_ROW_LINES)
-				#self.tree.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.on_open)
-				self.tree.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.right_click)
-				#self.init_data()
 				
-		def init_data(self):
+				self.tree.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.right_click)
+				self.tree.Bind(wx.EVT_TREE_ITEM_MENU, self.on_menu)
+				#self.init_test_data()
+				
+		def init_test_data(self):
 				root = TreeCtrlData()
 				root.name = 'root'
 				sub = TreeCtrlData()
@@ -111,16 +106,21 @@ class TreePanel(wx.Panel):
 		def init_dir(self, path):
 				root = TreeCtrlData()
 				root.name = path
+				root.path = path
 				files = os.listdir(path)
 				for file in files:
 						p = path + '/' + file
 						node = TreeCtrlData()
 						node.name = file
+						node.path = p
 						if os.path.isdir(p):
 								node.is_folder = True
 								self.get_node(node, p)
 						root.children.append(node)
 				self.tree.refresh_data(root)
+				
+		def set_menu(self, menu):
+				self.menu = menu
 				
 		def get_node(self, parent, path):
 				files = os.listdir(path)
@@ -140,10 +140,39 @@ class TreePanel(wx.Panel):
 				paths = self.tree.GetSelections()
 				print paths
 				
+		def on_menu(self, evt):
+				pos = evt.GetPoint()
+				self.PopupMenu(self.menu, pos)
+				
 		def right_click(self, evt):
 				paths = self.tree.GetSelections()
 				print paths
 				
+		def get_selections(self):
+				rst = []
+				for select in self.tree.GetSelections():
+						d = self.tree.GetItemData(select)
+						rst.append(d)
+				return rst
+				
 		def SetSize(self, size):
 				wx.Panel.SetSize(self, size)
 				self.tree.SetSize(size)
+				
+class PopupMenu(wx.PopupTransientWindow):
+		def __init__(self, parent, size, flags):
+				wx.PopupTransientWindow.__init__(self, parent, flags = flags)
+				self.menus = wx.ListBox(self, size=(100, -1))
+				self.refreshData(None)
+				
+		def refreshData(self, datas):
+				self.menus.Clear()
+				ms = ['a', 'b', 'c']
+				for m in ms:
+						item = self.menus.Append(m)
+				self.menus.FitInside()
+				#print self.menus.GetSize(), self.menus.GetMinSize()
+				self.SetSize(self.menus.GetSize())
+				
+		def on_click(self, evt):
+				pass
