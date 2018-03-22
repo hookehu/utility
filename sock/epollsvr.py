@@ -39,7 +39,7 @@ class Server:
     def run(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind(SVR_HOST, SVR_PORT))
+        sock.bind((SVR_HOST, SVR_PORT))
         sock.listen(2048)
         sock.setblocking(False)
         timeout = 1
