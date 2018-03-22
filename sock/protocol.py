@@ -1,5 +1,6 @@
 #-*- coding:utf-8 -*-
 import struct
+from config import BYTE_ORDER
 
 def crc_1byte(data):
     crc_1byte = 0
@@ -21,7 +22,6 @@ def crc_byte(data):
     return rst
 
 class BaseProtocol:
-    BYTE_ORDER = '<' # < : little-endian; > : big-endian
 
     def decode(self, stream):
         rst = self.do_decode(stream)
@@ -35,16 +35,16 @@ class BaseProtocol:
         if head != '\xab':
             print 'none head', ord(head), ord('\xab'), head == '\xab'
             return False, None
-        dlen = struct.unpack(self.BYTE_ORDER + 'I', stream[1:5])[0]
-        flag = struct.unpack(self.BYTE_ORDER + 'I', stream[5:9])[0]
+        dlen = struct.unpack(BYTE_ORDER + 'I', stream[1:5])[0]
+        flag = struct.unpack(BYTE_ORDER + 'I', stream[5:9])[0]
         cmd = struct.unpack('c', stream[9])[0]
-        sn = struct.unpack(self.BYTE_ORDER + '16s', stream[10:10+16])[0]
+        sn = struct.unpack(BYTE_ORDER + '16s', stream[10:10+16])[0]
         tn = struct.unpack('c', stream[26])[0]
         tl = 4 + 1 + 16 + 1 + 1 #数据包长：flag + cmd + sn + type + data + crc
         print dlen, tl, sn
         dataend = 27 + dlen - tl
         if dlen > tl:
-            self.data = struct.unpack(self.BYTE_ORDER + str(dlen -  tl) + 's', stream[27:dataend])[0]
+            self.data = struct.unpack(BYTE_ORDER + str(dlen -  tl) + 's', stream[27:dataend])[0]
         crc = struct.unpack('c', stream[dataend])[0]
         end = struct.unpack('c', stream[dataend + 1])[0]
         print 'decode end', ord(end), ord('\xed')
@@ -60,13 +60,13 @@ class BaseProtocol:
         data = '\x01'
         datalen = 1
         dlen = 4 + 1 + 16 + 1 + datalen + 1
-        pkg = pkg + struct.pack(self.BYTE_ORDER + 'I', dlen) #len
-	pkg = pkg + struct.pack(self.BYTE_ORDER + 'I', flag) #flag
+        pkg = pkg + struct.pack(BYTE_ORDER + 'I', dlen) #len
+	pkg = pkg + struct.pack(BYTE_ORDER + 'I', flag) #flag
         pkg = pkg + struct.pack('c', cmd) #cmd
-        pkg = pkg + struct.pack(self.BYTE_ORDER + '16s', sn) #SN
+        pkg = pkg + struct.pack(BYTE_ORDER + '16s', sn) #SN
         pkg = pkg + struct.pack('c', tn) #type or num
         if datalen > 0:
-            pkg = pkg + struct.pack(self.BYTE_ORDER + str(datalen) + 's', data) #data
+            pkg = pkg + struct.pack(BYTE_ORDER + str(datalen) + 's', data) #data
         crc = crc_byte(pkg)
         print 'crc', crc
         crc = chr(crc)
@@ -76,7 +76,7 @@ class BaseProtocol:
         return pkg
 
 class BaseCMD:
-    BYTE_ORDER = '<' # < : little-endian; > : big-endian
+    
     def do(self):
         pass
     
@@ -97,7 +97,7 @@ class CMD1(BaseCMD):
 
     def unpack(self, data):
         active_rst = struct.unpack('c', data[0])
-        protocol_version = struct.unpack(self.BYTE_ORDER + 'H', data[1:3])
+        protocol_version = struct.unpack(BYTE_ORDER + 'H', data[1:3])
 
 class CMD2(BaseCMD):
     cmd = '\x02'
@@ -109,14 +109,14 @@ class CMD2(BaseCMD):
         pass
 
     def unpack(self, data):
-        factory = struct.unpack(self.BYTE_ORDER + 'H', data[0:2])
-        soft_version = struct.unpack(self.BYTE_ORDER + 'H', data[2:4])
-        protocol_version = struct.unpack(self.BYTE_ORDER + 'H', data[4:6])
-        max_vol = struct.unpack(self.BYTE_ORDER + 'I', data[6:10])
-        min_vol = struct.unpack(self.BYTE_ORDER + 'I', data[10:14])
-        max_dc = struct.unpack(self.BYTE_ORDER + 'I', data[14:18])
-        power = struct.unpack(self.BYTE_ORDER + 'I', data[18:22])
-        build_date = struct.unpack(self.BYTE_ORDER + 'I', data[22:26])
+        factory = struct.unpack(BYTE_ORDER + 'H', data[0:2])
+        soft_version = struct.unpack(BYTE_ORDER + 'H', data[2:4])
+        protocol_version = struct.unpack(BYTE_ORDER + 'H', data[4:6])
+        max_vol = struct.unpack(BYTE_ORDER + 'I', data[6:10])
+        min_vol = struct.unpack(BYTE_ORDER + 'I', data[10:14])
+        max_dc = struct.unpack(BYTE_ORDER + 'I', data[14:18])
+        power = struct.unpack(BYTE_ORDER + 'I', data[18:22])
+        build_date = struct.unpack(BYTE_ORDER + 'I', data[22:26])
         dev_type = struct.unpack('c', data[26])
         gun_num = struct.unpack('c', data[27])
         dev_charge_type = struct.unpack('c', data[28])
