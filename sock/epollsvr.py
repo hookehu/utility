@@ -3,6 +3,7 @@ import select
 import socket
 import struct
 from protocol import *
+from config import SVR_HOST, SVR_PORT
 
 class Channel:
     def __init__(self, fd, epoll):
@@ -31,8 +32,6 @@ class Channel:
         self.sock.close()
 
 class Server:
-    HOST = '0.0.0.0'
-    PORT = 3444
     def __init__(self):
         self.channels = {}
         pass
@@ -40,7 +39,7 @@ class Server:
     def run(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind((self.HOST, self.PORT))
+        sock.bind(SVR_HOST, SVR_PORT))
         sock.listen(2048)
         sock.setblocking(False)
         timeout = 1
