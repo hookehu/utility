@@ -7,8 +7,6 @@ from protocol import *
 from config import CLT_HOST, CLT_PORT
 
 class Client:
-    HOST = '127.0.0.1'
-    PORT = 3444
 
     def __init__(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
