@@ -4,6 +4,7 @@ import select
 import socket
 from epollsvr import Channel
 from protocol import *
+from config import CLT_HOST, CLT_PORT
 
 class Client:
     HOST = '127.0.0.1'
@@ -11,8 +12,8 @@ class Client:
 
     def __init__(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((self.HOST, self.PORT))
-        timeout = 10
+        sock.connect((CLT_HOST, CLT_PORT))
+        self.timeout = 1
         self.epoll = select.epoll()
         self.epoll.register(sock.fileno(), select.EPOLLIN)
         self.sock = sock
@@ -21,7 +22,7 @@ class Client:
     def run(self):
         cmd = '1'
         while True:
-            events = self.epoll.poll(1)
+            events = self.epoll.poll(self.timeout)
             print cmd
             if not events:
                 print cmd
