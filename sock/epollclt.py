@@ -53,7 +53,8 @@ class Client:
                     self.epoll.modify(self.sock.fileno(), select.EPOLLIN)
 
     def cmd1(self):
-        pkg = CMD1().encode()
+        pkg = CMD1().pkg()
+	pkg = BaseProtocol().encode(pkg)
         self.channel.write(pkg)
 	
 
