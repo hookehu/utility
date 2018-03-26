@@ -1,6 +1,7 @@
 #-*- coding:utf-8 -*-
 import struct
 from config import BYTE_ORDER
+from cmds import *
 
 def crc_1byte(data):
     crc_1byte = 0
@@ -20,13 +21,16 @@ def crc_byte(data):
         print byte
         rst = (crc_1byte(rst ^ byte))
     return rst
-
+print dir()
 class BaseProtocol:
+    cmds = {
+    CMD1.cmd:CMD1,
+    CMD2.cmd:CMD2,
+    }
 
     def decode(self, stream):
         rst = self.do_decode(stream)
-        if not rst[0]:
-            return rst
+        return rst
         
 
     def do_decode(self, stream):
@@ -35,7 +39,13 @@ class BaseProtocol:
         if head != '\xab':
             print 'none head', ord(head), ord('\xab'), head == '\xab'
             return False, None
+        if len(stream) < 5:
+            print 'no enough len'
+            return False, None
         dlen = struct.unpack(BYTE_ORDER + 'I', stream[1:5])[0]
+        if len(stream) < 5 + dlen:
+            print 'no enough len for data', len(stream), dlen
+            return False, None
         flag = struct.unpack(BYTE_ORDER + 'I', stream[5:9])[0]
         cmd = struct.unpack('c', stream[9])[0]
         sn = struct.unpack(BYTE_ORDER + '16s', stream[10:10+16])[0]
@@ -44,11 +54,15 @@ class BaseProtocol:
         print dlen, tl, sn
         dataend = 27 + dlen - tl
         if dlen > tl:
-            self.data = struct.unpack(BYTE_ORDER + str(dlen -  tl) + 's', stream[27:dataend])[0]
+            data = struct.unpack(BYTE_ORDER + str(dlen -  tl) + 's', stream[27:dataend])[0]
         crc = struct.unpack('c', stream[dataend])[0]
         end = struct.unpack('c', stream[dataend + 1])[0]
         print 'decode end', ord(end), ord('\xed')
-        return True, stream[dataend + 1 + 1:]
+        c = self.cmds[cmd]()
+        if dlen > tl:
+            c.unpack(data)
+        print 'jjjj'
+        return True, c, stream[dataend + 1 + 1:]
 
     def encode(self, cmd_data):
         pkg = ''
@@ -75,57 +89,3 @@ class BaseProtocol:
         pkg = struct.pack('c', '\xab') + pkg #head
         return pkg
 
-class BaseCMD:
-    cmd = ''
-    flag = 0
-    tn = '\x00'
-    sn = '1234567890123456'
-    data = ''
-    
-    def do(self):
-        pass
-    
-    def pkg(self):
-        pass
-
-    def unpack(self, data):
-        pass
-
-class CMD1(BaseCMD):
-    cmd = '\x01'
-
-    def do(self):
-        print 'do cmd1'
-        pass
-
-    def pkg(self):
-        self.flag = 0
-        self.tn = '\x00'
-
-    def unpack(self, data):
-        self.active_rst = struct.unpack('c', data[0])
-        self.protocol_version = struct.unpack(BYTE_ORDER + 'H', data[1:3])
-
-class CMD2(BaseCMD):
-    cmd = '\x02'
-    
-    def do(self):
-        print 'do cmd2'
-        pass
-
-    def pkg(self):
-        self.flag = 0
-        self.tn = '\x00'
-
-    def unpack(self, data):
-        self.factory = struct.unpack(BYTE_ORDER + 'H', data[0:2])
-        self.soft_version = struct.unpack(BYTE_ORDER + 'H', data[2:4])
-        self.protocol_version = struct.unpack(BYTE_ORDER + 'H', data[4:6])
-        self.max_vol = struct.unpack(BYTE_ORDER + 'I', data[6:10])
-        self.min_vol = struct.unpack(BYTE_ORDER + 'I', data[10:14])
-        self.max_dc = struct.unpack(BYTE_ORDER + 'I', data[14:18])
-        self.power = struct.unpack(BYTE_ORDER + 'I', data[18:22])
-        self.build_date = struct.unpack(BYTE_ORDER + 'I', data[22:26])
-        self.dev_type = struct.unpack('c', data[26])
-        self.gun_num = struct.unpack('c', data[27])
-        self.dev_charge_type = struct.unpack('c', data[28])

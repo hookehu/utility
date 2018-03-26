@@ -10,14 +10,21 @@ class Channel:
         self.pkgs = []
         self.sock = fd
         self.epoll = epoll
+        self.data = ''
 
     def read(self):
-        data = self.sock.recv(1024)
-        if data:
-           print 'data', data, len(data)
-           for k in data:
-               print 'k', struct.unpack('c', k)
-           CMD1().decode(data)
+        self.data = self.data + self.sock.recv(1024)
+        while len(self.data) > 0:
+           print 'data', self.data, len(self.data)
+           #for k in data:
+           #    print 'k', struct.unpack('c', k)
+           
+           rst = BaseProtocol().decode(self.data)
+           if not rst[0]:
+               return
+           self.data = rst[2]
+           cmd = rst[1]
+           cmd.do()
 
     def write(self, pkg):
         self.pkgs.append(pkg)
