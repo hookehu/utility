@@ -56,6 +56,10 @@ class Client:
         pkg.pkg()
 	pkg = BaseProtocol().encode(pkg)
         self.channel.write(pkg)
+        pkg = CMD2()
+        pkg.pkg()
+        pkg = BaseProtocol().encode(pkg)
+        self.channel.write(pkg)
 	
 
 if __name__ == "__main__":
