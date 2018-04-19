@@ -2,7 +2,7 @@
 import select
 import socket
 import struct
-from protocol import *
+from protocol_jt import *
 from config import SVR_HOST, SVR_PORT
 
 class Channel:
