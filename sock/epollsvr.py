@@ -2,7 +2,7 @@
 import select
 import socket
 import struct
-from protocol_jt import *
+from protocol_104 import *
 from config import SVR_HOST, SVR_PORT
 
 class Channel:
@@ -15,7 +15,7 @@ class Channel:
     def read(self):
         self.data = self.data + self.sock.recv(1024)
         while len(self.data) > 0:
-           print 'data', self.data, len(self.data)
+           print('data', self.data, len(self.data))
            #for k in data:
            #    print 'k', struct.unpack('c', k)
            

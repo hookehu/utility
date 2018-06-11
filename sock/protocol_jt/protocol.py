@@ -21,7 +21,6 @@ def crc_byte(data):
         print byte
         rst = (crc_1byte(rst ^ byte))
     return rst
-print dir()
 class BaseProtocol:
     cmds = {
     CMD1.cmd:CMD1,
@@ -34,34 +33,33 @@ class BaseProtocol:
         
 
     def do_decode(self, stream):
-        print 'stream len', len(stream)
+        print('stream len', len(stream))
         head = struct.unpack('c', stream[0])[0]
         if head != '\xab':
-            print 'none head', ord(head), ord('\xab'), head == '\xab'
+            print('none head', ord(head), ord('\xab'), head == '\xab')
             return False, None
         if len(stream) < 5:
-            print 'no enough len'
+            print('no enough len')
             return False, None
         dlen = struct.unpack(BYTE_ORDER + 'I', stream[1:5])[0]
         if len(stream) < 5 + dlen:
-            print 'no enough len for data', len(stream), dlen
+            print('no enough len for data', len(stream), dlen)
             return False, None
         flag = struct.unpack(BYTE_ORDER + 'I', stream[5:9])[0]
         cmd = struct.unpack('c', stream[9])[0]
         sn = struct.unpack(BYTE_ORDER + '16s', stream[10:10+16])[0]
         tn = struct.unpack('c', stream[26])[0]
         tl = 4 + 1 + 16 + 1 + 1 #数据包长：flag + cmd + sn + type + data + crc
-        print dlen, tl, sn
+        print(dlen, tl, sn)
         dataend = 27 + dlen - tl
         if dlen > tl:
             data = struct.unpack(BYTE_ORDER + str(dlen -  tl) + 's', stream[27:dataend])[0]
         crc = struct.unpack('c', stream[dataend])[0]
         end = struct.unpack('c', stream[dataend + 1])[0]
-        print 'decode end', ord(end), ord('\xed')
+        print('decode end', ord(end), ord('\xed'))
         c = self.cmds[cmd]()
         if dlen > tl:
             c.unpack(data)
-        print 'jjjj'
         return True, c, stream[dataend + 1 + 1:]
 
     def encode(self, cmd_data):
@@ -82,7 +80,7 @@ class BaseProtocol:
         if datalen > 0:
             pkg = pkg + struct.pack(BYTE_ORDER + str(datalen) + 's', data) #data
         crc = crc_byte(pkg)
-        print 'crc', crc
+        print('crc', crc)
         crc = chr(crc)
         pkg = pkg + struct.pack('c', crc) #crc
         pkg = pkg + struct.pack('c', '\xed') #end

@@ -3,7 +3,7 @@ import struct
 import select
 import socket
 from epollsvr import Channel
-from protocol import *
+from protocol_104 import *
 from config import CLT_HOST, CLT_PORT
 
 class Client:
@@ -21,21 +21,13 @@ class Client:
         cmd = '1'
         while True:
             events = self.epoll.poll(self.timeout)
-            print cmd
             if not events:
-                print cmd
                 if cmd == '1':
-                    print '1'
                     p = struct.pack('!i2si', 1, 'ab', 34)
-                    print p
-                    #self.channel.write(p)
                     self.cmd1()
                     cmd = '2'
                 elif cmd == '2':
-                    print '2'
                     pp = struct.pack('<i2si', 2, 'bc', 34)
-                    print len(pp)
-                    #self.channel.write(pp)
                     cmd = 'exit'
                 elif cmd == 'exit':
                     break
@@ -54,7 +46,7 @@ class Client:
     def cmd1(self):
         pkg = CMD1()
         pkg.pkg()
-	pkg = BaseProtocol().encode(pkg)
+        pkg = BaseProtocol().encode(pkg)
         self.channel.write(pkg)
         pkg = CMD2()
         pkg.pkg()

@@ -3,11 +3,11 @@ import struct
 from config import BYTE_ORDER
 
 class BaseCMD:
-    cmd = ''
-    flag = 0
-    tn = '\x00'
-    sn = '1234567890123456'
-    data = ''
+    self.cmd = ''
+    self.flag = 0
+    self.tn = '\x00'
+    self.sn = '1234567890123456'
+    self.data = ''
     
     def do(self):
         pass
@@ -19,7 +19,7 @@ class BaseCMD:
         pass
 
 class CMD1(BaseCMD):
-    cmd = '\x01'
+    self.cmd = '\x01'
 
     def do(self):
         print 'do cmd1'
@@ -36,7 +36,7 @@ class CMD1(BaseCMD):
         print self.active_rst, self.protocol_version
 
 class CMD2(BaseCMD):
-    cmd = '\x02'
+    self.cmd = '\x02'
     
     def do(self):
         print 'do cmd2'
