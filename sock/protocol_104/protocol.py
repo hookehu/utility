@@ -298,7 +298,9 @@ class APDU(BaseCMD):
         self.apdu_len = struct.unpack('B', data[1:2])
         self.apci = APCI()
         data = self.apci.unpack(data[2:])
-        self.asdu = ASDU()
+        asdu_type = struct.unpack('B', data[0])
+        if asdu_type == ASDUTYPE:
+            self.asdu = M_SP_NA_1()
         self.asdu.unpack(data)
 
     def pkg(self):
@@ -412,25 +414,30 @@ class ASDU(BaseCMD):
         ia = ia0 << 16 + ia1 << 8 + ia2
         return ia
 
+    def info_addr_todata(self, value):
+        d = ''
+        ia0 = value >> 16
+        ia1 = value >> 8 - ia0 << 8
+        ia2 = value - ia0 << 16 - ia1 << 8
+        d = struct.pack('B', ia0)
+        d = d + struct.pack('B', ia1)
+        d = d + struct.pack('B', ia2)
+        return d
+
     def do(self):
-        if self.sub_asdu is not None:
-            self.sub_asdu.do()
+        pass
     
     def pkg(self):
-        if self.sub_asdu is not None:
-            self.sub_asdu.pkg()
-            self.data = self.sub_asdu.data
-        else:
-            self.data = ''
+        self.data = ''
 
     def unpack(self, data):
         self.asdu_type = struct.unpack('B', data[0])
         self.var_struct = struct.unpack('B', data[1])
         self.cause = struct.unpack(BYTE_ORDER + 'H', data[2:4])
         self.common_addr = struct.unpack(BYTE_ORDER + 'H', data[4:6])
-        self.SQ = self.var_struct & (1 << 7)
-        self.info_num = self.var_struct >> 1
-        self.cause = self.cause >> 8
+        self.SQ = self.var_struct & 128
+        self.info_num = self.var_struct & 127
+        self.cause = self.cause
         return data[6:]
 
     def unpack_subtype(self, data):
@@ -447,10 +454,31 @@ class M_SP_NA_1(ASDU):
     self.info_addrs = []
     self.infos = []
 
+    def do(self):
+        print("M_SP_NA_1 do");
+
     def pkg(self):
-        pass
+        ASDU.pkg(self)
+        self.data = self.data + struct.pack('B', self.asdu_type)
+        vs = self.SQ << 7 + self.info_num
+        self.data = self.data + struct.pack('B', vs)
+        self.data = self.data + struct.pack('B', self.cause)
+        self.data = self.data + struct.pack('B', self.common_addr)
+        if self.SQ == 0:
+            i = 0
+            self.data = self.data + self.info_addr_todata(self.info_addrs[0])
+            while i < self.info_num:
+                self.data = self.data + struct.pack('B', self.infos[i])
+                i = i + 1
+        else:
+            i = 0
+            while i < self.info_num:
+                self.data = self.data + self.info_addr_todata(self.info_addrs[i])
+                self.data = self.data + struct.pack('B', self.infos[i])
+                i = i + 1
 
     def unpack(self, data):
+        data = ASDU.unpack(self, data)
         if self.SQ == 0:
             return self.unpack_sq0(data)
         else:
@@ -463,8 +491,8 @@ class M_SP_NA_1(ASDU):
         i = 0
         step = 1
         end = 3
-        while i <= self.info_num:
-            info = struct.unpack(BYTE_ORDER + 'B', data[3 + i * step : 4 + i * step])
+        while i < self.info_num:
+            info = struct.unpack('B', data[3 + i * step])
             self.infos.append(info)
             end = 4 + i * step
             i = i + 1
@@ -474,10 +502,10 @@ class M_SP_NA_1(ASDU):
         i = 0
         step = 4
         end = 0
-        while i <= self.info_num:
+        while i < self.info_num:
             ia = self.get_info_addr(data[0 + i * step : 3 + i + step])
             self.info_addrs.append(ia)
-            info = struct.unpack(BYTE_ORDER + 'B', data[3 + i * step : 4 + i * step])
+            info = struct.unpack('B', data[3 + i * step])
             end = 4 + i * step
             self.info.append(info)
             i = i + 1
@@ -1555,7 +1583,6 @@ class BaseProtocol:
 
     def encode(self, cmd_data):
         pkg = ''
-        apdu = APDU()
-        pkg = apdu.pack()
+        pkg = cmd_data.data
         return pkg
 

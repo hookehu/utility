@@ -44,13 +44,23 @@ class Client:
                     self.epoll.modify(self.sock.fileno(), select.EPOLLIN)
 
     def cmd1(self):
-        pkg = CMD1()
-        pkg.pkg()
-        pkg = BaseProtocol().encode(pkg)
-        self.channel.write(pkg)
-        pkg = CMD2()
-        pkg.pkg()
-        pkg = BaseProtocol().encode(pkg)
+        apdu = APDU()
+        apdu.start_flag = 0x68
+        apci = APCI()
+        apci.i = I()
+        apci.i.send_sn = 0
+        apci.i.recv_svn = 0
+        apdu.apci = apci
+        asdu = M_SP_NA_1()
+        asdu.asdu_type = ASDUTYPE.M_SP_NA_1
+        asdu.SQ = 0
+        asdu.info_num = 1
+        asdu = M_SP_NA_1()
+        asdu.info_addrs.append(0)
+        asdu.infos.append(1)
+        apdu.asdu = asdu
+        apdu.pkg()
+        pkg = BaseProtocol().encode(apdu)
         self.channel.write(pkg)
 	
 
