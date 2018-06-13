@@ -3,6 +3,8 @@ import struct
 from config import BYTE_ORDER
 
 class BaseCMD:
+    def __init__(self):
+        pass
     
     def do(self):
         pass

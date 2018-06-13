@@ -146,15 +146,17 @@ class SIQ(BaseCMD):
     <0>:=有效
     <1>:=无效
     '''
-    self.SPI = 0
-    self.RES = 0
-    self.BL = 0
-    self.SB = 0
-    self.NT = 0
-    self.IV = 0
+    def __init__(self):
+        BaseCMD.__init__(self)
+        self.SPI = 0
+        self.RES = 0
+        self.BL = 0
+        self.SB = 0
+        self.NT = 0
+        self.IV = 0
 
     def unpack(self, data):
-        v = struct.unpack('B', data[0])
+        v = struct.unpack('B', data[0])[0]
         return data[1:]
 
 
@@ -165,7 +167,9 @@ class SVA(BaseCMD):
     SVA:=F16[1..16]<-215..+215-1>
     没有定义测量值的分辩率，如果测量值的分辩率比 LSB 的最小单位粗，则这些 LSB 位设置为零。
     '''
-    self.SVA = 0
+    def __init__(self):
+        BaseCMD.__init__(self)
+        self.SVA = 0
 
     def unpack(self, data):
         lsb = data[0]
@@ -205,15 +209,17 @@ class QDS(BaseCMD):
     IV=有效/无效
     若值被正确采集就是有效，在采集功能确认信息源的反常状态(丧失或非工 作刷新装置)则值就是无效。信息对象的值在这些条件下没有被定义。标上无效用以􏰀醒使用者，此值不正确而不能使用
     '''
-    self.OV = 0
-    self.RES = 0
-    self.BL = 0
-    self.SB = 0
-    self.NT = 0
-    self.IV = 0
+    def __init__(self):
+        BaseCMD.__init__(self)
+        self.OV = 0
+        self.RES = 0
+        self.BL = 0
+        self.SB = 0
+        self.NT = 0
+        self.IV = 0
 
     def unpack(self, data):
-        v = struct.unpack('B', data[0])
+        v = struct.unpack('B', data[0])[0]
         return data[1:]
 
 class BCR(BaseCMD):
@@ -237,12 +243,14 @@ class BCR(BaseCMD):
     CY=进位
     CA=计数量被调整
     '''
-    self.COUNTER = 0
-    self.SEQ = []
+    def __init__(self):
+        BaseCMD.__init__(self)
+        self.COUNTER = 0
+        self.SEQ = []
 
     def unpack(self, data):
-        counter = struct.unpack(BYTE_ORDER + 'I', data[0:4])
-        SQ_CY_CA_IV= struct.unpack('B', data[4])
+        counter = struct.unpack(BYTE_ORDER + 'I', data[0:4])[0]
+        SQ_CY_CA_IV= struct.unpack('B', data[4])[0]
         return data[5:]
 
 
@@ -256,7 +264,9 @@ class QOI(BaseCMD):
     <1..19>:=为本配套标准的标准定义保留(兼容范围) 
     <20>:=响应站召唤
     '''
-    self.QOI = 0
+    def __init__(self):
+        BaseCMD.__init__(self)
+        self.QOI = 0
 
     def unpack(self, data):
         v = data[0]
@@ -280,39 +290,48 @@ class QCC(BaseCMD):
     <3>:=计数量复位
     由 FRZ 码所规定的动作仅用于由 RQT 码所规定的组。
     '''
-    self.RQT = 0
-    self.FRZ = 0
+    def __init__(self):
+        BaseCMD.__init__(self)
+        self.RQT = 0
+        self.FRZ = 0
 
     def unpack(self, data):
-        qcc = struct.unpack('B', data[0])
+        qcc = struct.unpack('B', data[0])[0]
         return data[1:]
     
 class APDU(BaseCMD):
-    self.start_flag = 0
-    self.apdu_len = 0 #max length 253
-    self.apci = None
-    self.asdu = None
+
+    def __init__(self):
+        BaseCMD.__init__(self)
+        self.start_flag = 0
+        self.apdu_len = 0 #max length 253
+        self.apci = None
+        self.asdu = None
 
     def unpack(self, data):
-        self.start_flag = struct.unpack('B', data[0:1])
-        self.apdu_len = struct.unpack('B', data[1:2])
+        self.start_flag = struct.unpack('B', data[0:1])[0]
+        self.apdu_len = struct.unpack('B', data[1:2])[0]
         self.apci = APCI()
         data = self.apci.unpack(data[2:])
-        asdu_type = struct.unpack('B', data[0])
+        asdu_type = struct.unpack('B', data[0])[0]
         if asdu_type == ASDUTYPE:
             self.asdu = M_SP_NA_1()
-        self.asdu.unpack(data)
+            self.asdu.unpack(data)
+        print('asdu type', asdu_type)
 
     def pkg(self):
         pkg = ''
         pkg = pkg + struct.pack('B', self.start_flag)
+        print('pkg', pkg)
         d = ''
         if self.apci is not None:
             self.apci.pkg()
             d = d + self.apci.data
+            print('d', d)
         if self.asdu is not None:
             self.asdu.pkg()
             d = d + self.asdu.data
+            print('f', self.asdu.data)
         _l = len(d)
         _l = _l + 2
         self.apdu_len = _l
@@ -321,15 +340,18 @@ class APDU(BaseCMD):
         self.data = pkg
     
 class APCI(BaseCMD):
-    self.i = None
-    self.u = None
-    self.s = None
+    
+    def __init__(self):
+        BaseCMD.__init__(self)
+        self.i = None
+        self.u = None
+        self.s = None
 
     def unpack(self, data):
-        one = struct.unpack('B', data[0])
-        two = struct.unpack('B', data[1])
-        three = struct.unpack('B', data[2])
-        four = struct.unpack('B', data[3])
+        one = struct.unpack('B', data[0])[0]
+        two = struct.unpack('B', data[1])[0]
+        three = struct.unpack('B', data[2])[0]
+        four = struct.unpack('B', data[3])[0]
         if one & 0x01 == 1:
             if one & 2 == 0:
                 #S
@@ -365,17 +387,21 @@ class APCI(BaseCMD):
 
     
 class I(BaseCMD):#for has sid common info
-    self.send_sn = 0 #little-endian len 2 byte
-    self.recv_sn = 0 #little-endian len 2 byte
+    def __init__(self):
+        BaseCMD.__init__(self)
+        self.send_sn = 0 #little-endian len 2 byte
+        self.recv_sn = 0 #little-endian len 2 byte
 
     def pkg(self):
         self.data = struct.pack(BYTE_ORDER + 'H', self.send_sn)
         self.data = self.data + struct.pack(BYTE_ORDER + 'H', self.recv_sn)
     
 class S(BaseCMD):#for watch info
-    self.one = 1
-    self.two = 0
-    self.recv_sn = 0 #little-endian len 2 byte
+    def __init__(self):
+        BaseCMD.__init__(self)
+        self.one = 1
+        self.two = 0
+        self.recv_sn = 0 #little-endian len 2 byte
 
     def pkg(self):
         self.data = struct.pack('B', self.one)
@@ -383,34 +409,39 @@ class S(BaseCMD):#for watch info
         self.data = self.data + struct.pack(BYTE_ORDER + 'H', self.recv_sn)
     
 class U(BaseCMD):#for other control info no sid
-    self.test_c = 0
-    self.test_v = 0
-    self.start_c = 0
-    self.start_v = 0
-    self.stop_c = 0
-    self.stop_v = 0
-    self.flag = 3 #test_con test_act stop_con stop_act start_con start_act 1 1
-    self.two = '\x00'
-    self.three = '\x00'
-    self.four = '\x00'
+    def __init__(self):
+        BaseCMD.__init__(self)
+        self.test_c = 0
+        self.test_v = 0
+        self.start_c = 0
+        self.start_v = 0
+        self.stop_c = 0
+        self.stop_v = 0
+        self.flag = 3 #test_con test_act stop_con stop_act start_con start_act 1 1
+        self.two = '\x00'
+        self.three = '\x00'
+        self.four = '\x00'
 
     def pkg(self):
         one = self.test_c << 7 + self.test_v << 6 + self.stop_c << 5 + self.stop_v << 4 + self.start_c << 3 + self.start_v << 2 + 1 << 1 + 1
         self.data = self.data + struct.pack('B', one) + self.two + self.three + self.four
 
 class ASDU(BaseCMD):
-    self.asdu_type = 0 #len 1 byte
-    self.var_struct = 0 #len 1 byte for meta info count range 0-127 [1..7]  [8] is SQ
-    self.cause = 0  #len 2 byte [1..8]
-    self.common_addr = 0 #len 2 byte  0:not use  65535:global_addr  1-65534:stage_addr
-    self.SQ = 0
-    self.info_num = 0
-    self.sub_asdu = None
+    def __init__(self):
+        BaseCMD.__init__(self)
+        self.asdu_type = 0 #len 1 byte
+        self.var_struct = 0 #len 1 byte for meta info count range 0-127 [1..7]  [8] is SQ
+        self.cause = 0  #len 2 byte [1..8]
+        self.common_addr = 0 #len 2 byte  0:not use  65535:global_addr  1-65534:stage_addr
+        self.SQ = 0
+        self.info_num = 0
+        self.info_addrs = []
+        self.infos = []
 
     def get_info_addr(self, data):
-        ia0 = struct.unpack(BYTE_ORDER + 'B', data[0])
-        ia1 = struct.unpack(BYTE_ORDER + 'B', data[1])
-        ia2 = struct.unpack(BYTE_ORDER + 'B', data[2])
+        ia0 = struct.unpack(BYTE_ORDER + 'B', data[0])[0]
+        ia1 = struct.unpack(BYTE_ORDER + 'B', data[1])[0]
+        ia2 = struct.unpack(BYTE_ORDER + 'B', data[2])[0]
         ia = ia0 << 16 + ia1 << 8 + ia2
         return ia
 
@@ -431,10 +462,10 @@ class ASDU(BaseCMD):
         self.data = ''
 
     def unpack(self, data):
-        self.asdu_type = struct.unpack('B', data[0])
-        self.var_struct = struct.unpack('B', data[1])
-        self.cause = struct.unpack(BYTE_ORDER + 'H', data[2:4])
-        self.common_addr = struct.unpack(BYTE_ORDER + 'H', data[4:6])
+        self.asdu_type = struct.unpack('B', data[0])[0]
+        self.var_struct = struct.unpack('B', data[1])[0]
+        self.cause = struct.unpack(BYTE_ORDER + 'H', data[2:4])[0]
+        self.common_addr = struct.unpack(BYTE_ORDER + 'H', data[4:6])[0]
         self.SQ = self.var_struct & 128
         self.info_num = self.var_struct & 127
         self.cause = self.cause
@@ -451,8 +482,8 @@ class ASDU(BaseCMD):
         return self.sub_asdu.unpack(data)
 
 class M_SP_NA_1(ASDU):
-    self.info_addrs = []
-    self.infos = []
+    def __init__(self):
+        ASDU.__init__(self)
 
     def do(self):
         print("M_SP_NA_1 do");
@@ -492,7 +523,7 @@ class M_SP_NA_1(ASDU):
         step = 1
         end = 3
         while i < self.info_num:
-            info = struct.unpack('B', data[3 + i * step])
+            info = struct.unpack('B', data[3 + i * step])[0]
             self.infos.append(info)
             end = 4 + i * step
             i = i + 1
@@ -505,15 +536,15 @@ class M_SP_NA_1(ASDU):
         while i < self.info_num:
             ia = self.get_info_addr(data[0 + i * step : 3 + i + step])
             self.info_addrs.append(ia)
-            info = struct.unpack('B', data[3 + i * step])
+            info = struct.unpack('B', data[3 + i * step])[0]
             end = 4 + i * step
             self.info.append(info)
             i = i + 1
         return data[end:]
 
 class M_ME_NA_1(ASDU):
-    self.info_addrs = []
-    self.infos = []
+    def __init__(self):
+        ASDU.__init__(self)
 
     def unpack(self, data):
         if self.SQ == 0:
@@ -549,9 +580,9 @@ class M_ME_NA_1(ASDU):
             i = i + 1
         return data[end:]
 
-class M_IT_NA_1(BaseCMD):
-    self.info_addrs = []
-    self.infos = []
+class M_IT_NA_1(ASDU):
+    def __init__(self):
+        ASDU.__init__(self)
 
     def unpack(self, data):
         if self.SQ == 0:
@@ -587,47 +618,9 @@ class M_IT_NA_1(BaseCMD):
             i = i + 1
         return data[end:]
 
-class M_RE_NA_1(BaseCMD):
-    self.info_addrs = []
-    self.infos =  []
-
-    def unpack(self, data):
-        if self.SQ == 0:
-            return self.unpack_sq0(data)
-        else:
-            return self.unpack_sq1(data)
-
-    def unpack_sq0(self, data):
-        ia = self.get_info_addr(data[0:3])
-        self.info_addrs.append(ia)
-        i = 0
-        step = 4
-        end = 3
-        while i <= self.info_num:
-            record_type = struct.unpack(BYTE_ORDER + 'B', data[3 + i * step : 6 + i * step])
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
-
-    def unpack_sq1(self, data):
-        i = 0
-        step = 7
-        end = 0
-        while i <= self.info_num:
-            ia = self.get_info_addr(data[0 + i * step : 3 + i + step])
-            self.info_addrs.append(ia)
-            value = data[3 + i * step : 6 + i * step]
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
-
-class M_CM_NA_1(BaseCMD):
-    self.info_addrs = []
-    self.infos = []
+class M_RE_NA_1(ASDU):
+    def __init__(self):
+        ASDU.__init__(self)
 
     def unpack(self, data):
         if self.SQ == 0:
@@ -663,9 +656,10 @@ class M_CM_NA_1(BaseCMD):
             i = i + 1
         return data[end:]
 
-class M_MD_NA_1(BaseCMD):
-    self.info_addrs = []
-    self.infos = []
+class M_CM_NA_1(ASDU):
+
+    def __init__(self):
+        ASDU.__init__(self)
 
     def unpack(self, data):
         if self.SQ == 0:
@@ -701,9 +695,9 @@ class M_MD_NA_1(BaseCMD):
             i = i + 1
         return data[end:]
 
-class M_SD_NA_1(BaseCMD):
-    self.info_addrs = []
-    self.infos = []
+class M_MD_NA_1(ASDU):
+    def __init__(self):
+        ASDU.__init__(self)
 
     def unpack(self, data):
         if self.SQ == 0:
@@ -739,9 +733,9 @@ class M_SD_NA_1(BaseCMD):
             i = i + 1
         return data[end:]
 
-class M_JC_NA_1(BaseCMD):
-    self.info_addrs = []
-    self.infos = []
+class M_SD_NA_1(ASDU):
+    def __init__(self):
+        ASDU.__init__(self)
 
     def unpack(self, data):
         if self.SQ == 0:
@@ -777,9 +771,9 @@ class M_JC_NA_1(BaseCMD):
             i = i + 1
         return data[end:]
 
-class C_IC_NA_1(BaseCMD):
-    self.info_addrs = []
-    self.infos = []
+class M_JC_NA_1(ASDU):
+    def __init__(self):
+        ASDU.__init__(self)
 
     def unpack(self, data):
         if self.SQ == 0:
@@ -815,9 +809,9 @@ class C_IC_NA_1(BaseCMD):
             i = i + 1
         return data[end:]
 
-class C_CI_NA_1(BaseCMD):
-    self.info_addrs = []
-    self.infos = []
+class C_IC_NA_1(ASDU):
+    def __init__(self):
+        ASDU.__init__(self)
 
     def unpack(self, data):
         if self.SQ == 0:
@@ -853,9 +847,9 @@ class C_CI_NA_1(BaseCMD):
             i = i + 1
         return data[end:]
 
-class C_CS_NA_1(BaseCMD):
-    self.info_addrs = []
-    self.infos = []
+class C_CI_NA_1(ASDU):
+    def __init__(self):
+        ASDU.__init__(self)
 
     def unpack(self, data):
         if self.SQ == 0:
@@ -891,9 +885,9 @@ class C_CS_NA_1(BaseCMD):
             i = i + 1
         return data[end:]
 
-class C_RP_NA_1(BaseCMD):
-    self.info_addrs = []
-    self.infos = []
+class C_CS_NA_1(ASDU):
+    def __init__(self):
+        ASDU.__init__(self)
 
     def unpack(self, data):
         if self.SQ == 0:
@@ -929,9 +923,9 @@ class C_RP_NA_1(BaseCMD):
             i = i + 1
         return data[end:]
 
-class C_CD_NA_1(BaseCMD):
-    self.info_addrs = []
-    self.infos = []
+class C_RP_NA_1(ASDU):
+    def __init__(self):
+        ASDU.__init__(self)
 
     def unpack(self, data):
         if self.SQ == 0:
@@ -967,9 +961,9 @@ class C_CD_NA_1(BaseCMD):
             i = i + 1
         return data[end:]
 
-class P_AC_NA_1(BaseCMD):
-    self.info_addrs = []
-    self.infos = []
+class C_CD_NA_1(ASDU):
+    def __init__(self):
+        ASDU.__init__(self)
 
     def unpack(self, data):
         if self.SQ == 0:
@@ -1005,9 +999,9 @@ class P_AC_NA_1(BaseCMD):
             i = i + 1
         return data[end:]
 
-class P_AB_NA_1(BaseCMD):
-    self.info_addrs = []
-    self.infos = []
+class P_AC_NA_1(ASDU):
+    def __init__(self):
+        ASDU.__init__(self)
 
     def unpack(self, data):
         if self.SQ == 0:
@@ -1043,9 +1037,9 @@ class P_AB_NA_1(BaseCMD):
             i = i + 1
         return data[end:]
 
-class P_AF_NA_1(BaseCMD):
-    self.info_addrs = []
-    self.infos = []
+class P_AB_NA_1(ASDU):
+    def __init__(self):
+        ASDU.__init__(self)
 
     def unpack(self, data):
         if self.SQ == 0:
@@ -1081,9 +1075,9 @@ class P_AF_NA_1(BaseCMD):
             i = i + 1
         return data[end:]
 
-class P_AD_NA_1(BaseCMD):
-    self.info_addrs = []
-    self.infos = []
+class P_AF_NA_1(ASDU):
+    def __init__(self):
+        ASDU.__init__(self)
 
     def unpack(self, data):
         if self.SQ == 0:
@@ -1119,9 +1113,47 @@ class P_AD_NA_1(BaseCMD):
             i = i + 1
         return data[end:]
 
-class P_AE_NA_1(BaseCMD):
-    self.info_addrs = []
-    self.infos = []
+class P_AD_NA_1(ASDU):
+    def __init__(self):
+        ASDU.__init__(self)
+
+    def unpack(self, data):
+        if self.SQ == 0:
+            return self.unpack_sq0(data)
+        else:
+            return self.unpack_sq1(data)
+
+    def unpack_sq0(self, data):
+        ia = self.get_info_addr(data[0:3])
+        self.info_addrs.append(ia)
+        i = 0
+        step = 4
+        end = 3
+        while i <= self.info_num:
+            record_type = struct.unpack(BYTE_ORDER + 'B', data[3 + i * step : 6 + i * step])
+            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
+            end = 7 + i * step
+            self.infos.append(info)
+            i = i + 1
+        return data[end:]
+
+    def unpack_sq1(self, data):
+        i = 0
+        step = 7
+        end = 0
+        while i <= self.info_num:
+            ia = self.get_info_addr(data[0 + i * step : 3 + i + step])
+            self.info_addrs.append(ia)
+            value = data[3 + i * step : 6 + i * step]
+            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
+            end = 7 + i * step
+            self.infos.append(info)
+            i = i + 1
+        return data[end:]
+
+class P_AE_NA_1(ASDU):
+    def __init__(self):
+        ASDU.__init__(self)
 
     def unpack(self, data):
         if self.SQ == 0:
@@ -1157,9 +1189,9 @@ class P_AE_NA_1(BaseCMD):
             i = i + 1 
         return data[end:]
 
-class P_WS_NA_1(BaseCMD):
-    self.info_addrs = []
-    self.infos = []
+class P_WS_NA_1(ASDU):
+    def __init__(self):
+        ASDU.__init__(self)
 
     def unpack(self, data):
         if self.SQ == 0:
@@ -1574,7 +1606,7 @@ class BaseProtocol:
         print 'stream len', len(stream)
         if stream[0] != '\x68':
             return
-        _len = struct.unpack('B', stream[1])
+        _len = struct.unpack('B', stream[1])[0]
         _rlen = _len - 2 #去除0x68头和长度所占位置
         pkg = stream[0:_len]
         apdu = APDU() 

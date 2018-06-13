@@ -3,7 +3,7 @@ import struct
 import select
 import socket
 from epollsvr import Channel
-from protocol_104 import *
+from protocol_104.protocol import *
 from config import CLT_HOST, CLT_PORT
 
 class Client:
@@ -48,18 +48,18 @@ class Client:
         apdu.start_flag = 0x68
         apci = APCI()
         apci.i = I()
-        apci.i.send_sn = 0
+        apci.i.send_sn = 1
         apci.i.recv_svn = 0
         apdu.apci = apci
         asdu = M_SP_NA_1()
         asdu.asdu_type = ASDUTYPE.M_SP_NA_1
         asdu.SQ = 0
         asdu.info_num = 1
-        asdu = M_SP_NA_1()
         asdu.info_addrs.append(0)
         asdu.infos.append(1)
         apdu.asdu = asdu
         apdu.pkg()
+        print('clt send data', apdu.data)
         pkg = BaseProtocol().encode(apdu)
         self.channel.write(pkg)
 	
