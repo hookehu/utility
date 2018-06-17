@@ -1290,372 +1290,480 @@ class P_WS_NA_1(ASDU):
             i = i + 1
         return data[end:]
 
-class CDSCSJ(BaseCMD):
+class MsgDesc:
+    def __init__(self, name, t, length, default_value):
+        self.msg_name = name
+        self.msg_type = t
+        self.msg_len = length
+        self.msg_default_value = default_value
+
+class BaseMsg(BaseCMD):
+    def __init__(self):
+        BaseCMD.__init__(self)
+        self.props = []
+        self.values = {}
+
+    def set_value(key, value):
+        self.values[key] = value
+
+    def get_value(key):
+        if(self.values.has_key(key)):
+            return self.values[key]
+        for p in self.props:
+            if(p.msg_name == key):
+                return p.msg_default_value
+
     def unpack(self, data):
-        self.CDSCDY = struct.unpack(BYTE_ORDER + 'H', data[0:2])
-        self.CDSCDL = struct.unpack(BYTE_ORDER + 'H', data[2:4])
-        self.SCJDQZT = struct.unpack(BYTE_ORDER + 'B', data[4:5])
-        self.LJQRKGZT = struct.unpack(BYTE_ORDER + 'B', data[5:6])
-        self.YGZDD = struct.unpack(BYTE_ORDER + 'L', data[6:10])
-        self.CDZBH = data[10:18]
-        self.SFLJDC = struct.unpack(BYTE_ORDER + 'B', data[10:11])
-        self.GZZT = struct.unpack(BYTE_ORDER + 'H', data[11:13])
-        self.CDQBH = struct.unpack(BYTE_ORDER + 'B', data[13:14])
-        self.CDQLX = struct.unpack(BYTE_ORDER + 'B', data[14:15])
-        self.GZYYDM = struct.unpack(BYTE_ORDER + 'B', data[15:16])
-        return data[16:]
+        offset  = 0
+        for p in self.props:
+            if p.msg_type == 'B':
+                v = struct.unpack('B', data[offset])[0]
+                self.values[p.msg_name] = v
+                offset = offset + 1
+                continue
+            if p.msg_type == 'I':
+                v = struct.unpack(BYTE_ORDER + 'I', data[offset:offset + 4])
+                self.values[p.msg_name] = v
+                offset = offset + 4
+                continue
+            if p.msg_type == 'BCD':
+                v = self.decode_bcd(data[offset:offset + p.msg_len])
+                self.values[p.msg_name] = v
+                offset = offset + p.msg_len
+                continue
+            if p.msg_type == 'H':
+                v = struct.unpack(BYTE_ORDER + 'H', data[offset:offset + 2])
+                self.values[p.msg_name] = v
+                offset = offset + 2
+                continue
+            if p.msg_type == 'STR':
+                v = data[offset:offset + p.msg_len]
+                self.values[p.msg_name] = v
+                offset = offset + p.msg_len
+                continue
+            if p.msg_type == 'CP56Time':
+                _a = CP56Time()
+                _a.unpack(data[offset:offset + 7])
+                self.values[p.msg_name] = _a
+                offset = offset + 7
+                continue
+        return data[offset:]
 
-class JQSJ(BaseCMD):
-    def unpack(self, data):
-        self.ZDJQBM = data[0:8]
-        self.LJKH = data[8:16]
-        self.KMM = data[16:32]
-        self.SRMM = data[32:48]
-        self.KYE = struct.unpack(BYTE_ORDER + 'I', data[48:52])
-        self.KZT = struct.unpack(BYTE_ORDER + 'H', data[52:54])
-        self.DDQCWYBS = data[54:86]
-        self.JFMXBM = data[86:94]
-        self.DDCCPHM = data[94:112]
-        self.CDQBH = struct.unpack(BYTE_ORDER + 'B', data[112:113])
-        self.SJJYY = data[113:129]
-        return data[129:]
+    def pkg(self):
+        d = ''
+        for p in self.props:
+            if p.msg_type == 'B':
+                d = d + struct.pack('B', self.values[p.msg_name])
+            if p.msg_type = 'I':
+                d = d + struct.pack(BYTE_ORDER + 'I', self.values[p.msg_name])
+            if p.msg_type == 'H':
+                d = d + struct.pack(BYTE_ORDER + 'H', self.values[p.msg_name])
+            if p.msg_type = 'BCD':
+                d = d + self.encode_bcd(self.values[p.msg_name])
+            if p.msg_type == 'STR':
+                d = d + self.values[p.msg_name]
+            if p.msg_type == 'CP56Time':
+                self.values[p.msg_name].pkg()
+                d = d + self.values[p.msg_name].data
+        self.data = d
 
-class TZCDSJ(BaseCMD):
-    def unpack(self, data):
-        self.JYLSH = data[0:16]
-        self.YWLX = data[16:18]
-        self.ZDJQBM = data[18:26]
-        self.YHBH = data[26:32]
-        self.LJKH = data[32:40]
-        self.KSSJ = data[40:47]
-        self.JSSJ = data[47:54]
-        self.JQSZ = data[54:58]
-        self.JZSZ = data[58:62]
-        self.FQSZ = data[64:66]
-        self.FZSZ = data[66:70]
-        self.PQSZ = data[70:74]
-        self.PZSZ = data[74:78]
-        self.GQSZ = data[78:82]
-        self.GZSZ = data[82:86]
-        self.JDL = data[86:90]
-        self.FDL = data[90:94]
-        self.PDL = data[94:98]
-        self.GDL = data[98:102]
-        self.ZDL = data[102:106]
-        self.JLSSLX = data[106:108]
-        self.BCJLSS = data[108:112]
-        self.SCJLSS = data[112:116]
-        self.SCCHDZBH = data[116:121]
-        self.SCYWLX = data[121:123]
-        self.DDQCWYBS = data[123:155]
-        self.JGE = data[155:159]
-        self.FJE = data[159:163]
-        self.PJE = data[163:167]
-        self.GJE = data[167:171]
-        self.ZJE = data[171:175]
-        self.DDCCPHM = data[175:193]
-        self.CDQBH = data[193:194]
-        self.YYLSH = data[194:214]
-        self.SJJYY = data[214:230]
-        return data[230:]
+class CDSCSJ(BaseMsg):
+    '''5.7.1充电过程实时监测数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('CDSCDY', 'H', 2, 0)) #充电输出电压 精确到小数点后一位
+        self.props.append(MsgDesc('CDSCDL', 'H', 2, 0)) #充电输出电流 精确到小数点后二位
+        self.props.append(MsgDesc('SCJDQZT', 'B', 1, 0)) #输出继电器状态 布尔型, 变化上传;0 关，1 开
+        self.props.append(MsgDesc('LJQRKGZT', 'B', 1, 0)) #连接确认开关状态 布尔型, 变化上传;0 关，1 开
+        self.props.append(MsgDesc('YGZDD', 'I', 4, 0)) #有功总电度 精确到小数点后两位
+        self.props.append(MsgDesc('CDZBH', 'BCD', 8, '0123456701234567')) #充电桩编号 16 位设备编码
+        self.props.append(MsgDesc('SFLJDC', 'B', 1, 0)) #是否连接电池 布尔型, 变化上传，0: 否，1:是
+        self.props.append(MsgDesc('GZZT', 'BCD', 2, '0000')) #工作状态 0 离 线 ，1 故 障 ，2 待 机 3 工作 4预约 5 等待
+        self.props.append(MsgDesc('CDQBH', 'B', 1, 0)) #充电枪编号 充电枪编号
+        self.props.append(MsgDesc('CDQLX', 'B', 1, 0)) #充电类型 0 交流 1 直流
+        self.props.append(MsgDesc('GZYYDM', 'B', 1, 0)) #故障原因代码 故障代码见 5.4.4.5，如 13 代表充电中强行拔 枪,无故障填 0
 
-class SCJYSJ(BaseCMD):
-    def unpack(self, data):
-        self.ZDJQBM = data[0:8]
-        self.JYLSH = data[8:24]
-        self.YHBH = data[24:32]
-        self.LJKH = data[32:40]
-        self.LXJYLX = data[40:41]
-        self.KSSJ = data[41:48]
-        self.JSSJ = data[48:55]
-        self.JQSZ = data[55:59]
-        self.JZSJ = data[59:63]
-        self.FQSZ = data[63:67]
-        self.FZSZ = data[67:71]
-        self.PQSZ = data[71:76]
-        self.PZSZ = data[76:80]
-        self.GQSZ = data[80:84]
-        self.GZSZ = data[84:88]
-        self.JLLX = data[88:90]
-        self.BCJLSS = data[90:94]
-        self.SCJLSS = data[94:98]
-        self.GDL = data[98:102]
-        self.GGE = data[102:106]
-        self.FDL = data[106:110]
-        self.FJE = data[110:114]
-        self.PDL = data[114:118]
-        self.PJE = data[118:122]
-        self.GDL = data[122:126]
-        self.GJE = data[126:130]
-        self.ZDL = data[130:134]
-        self.YWLX = data[134:136]
-        self.XFSZ = data[136:140]
-        self.XFDJ = data[140:144]
-        self.XFJE = data[144:148]
-        self.DDQCWYBS = data[148:180]
-        self.DDCCPHM = data[180:198]
-        self.CDQBH = data[198:199]
-        self.SJJYY = data[199:215]
-        return data[215:]
+class JQSJ(BaseMsg):
+    '''5.7.2鉴权数据包'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '0123456701234567')) #终端机器编码 充电桩资产编号，系统参 数的编号
+        self.props.append(MsgDesc('LJKH', 'BCD', 8, '0123456701234567')) #物理卡号 16 位编码
+        self.props.append(MsgDesc('KMM', 'STR', 16, '0123456701234567')) #卡密码 16 位字符串，同输入密 码相同
+        self.props.append(MsgDesc('SRMM', 'STR', 16, '0123456701234567')) #卡密码 16 位字符串
+        self.props.append(MsgDesc('KYE', 'I', 4, 0)) #卡余额 精确到小数点后两位，不 需要填写
+        self.props.append(MsgDesc('KZT', 'H', 2, 0)) #卡状态 0001-正常 0002-挂失 0003-欠费 0004-锁定 0005-注销，不需要填写
+        self.props.append(MsgDesc('DDQCWYBS', 'STR', 32, '')) #电动汽车唯一标识 32 位编码 前五位是组织机构编码，不需要填写
+        self.props.append(MsgDesc('JFMXBM', 'BCD', 8, '0123456701234567')) #计费模型编码 8 位编码，不需要填写
+        self.props.append(MsgDesc('DDCCPHM', 'STR', 18, '')) #电动车车牌号码 18 位字符串,GBK 编码 没有值时用’\0’填充
+        self.props.append(MsgDesc('CDQBH', 'B', 1, 0)) #充电枪编号 整型，0-255，0 表示单 枪或任意枪
+        self.props.append(MsgDesc('SJJYY', 'STR', 16, '')) #数据校验域 见 6.3 安全校验域的计 算方法
 
-class HMDXFSJ(BaseCMD):
-    def unpack(self, data):
-        self.LJKH = data[0:8]
-        self.ZT = data[8:10]
-        self.ZHGXSJ = data[10:17]
-        self.DDCCPHM = data[17:35]
-        return data[35:]
+class TZCDSJ(BaseMsg):
+    '''5.7.3在线情况下停止充电时上传记录数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('JYLSH', 'BCD', 16, '')) #交易流水号 32 位交易代码
+        self.props.append(MsgDesc('YWLX', 'BCD', 2, '')) #业务类型 0001-交流充电 0002-换电 0003 直流充电
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '')) #终端机器编码 充电桩资产编号，系统参数 的编号
+        self.props.append(MsgDesc('YHBH', 'BCD', 8, '')) #用户编号 16 位设备编码,不需要填写
+        self.props.append(MsgDesc('LJKH', 'BCD', 8, '')) #物理卡号 16 位编码
+        self.props.append(MsgDesc('KSSJ', 'CP56Time', 7, CP56Time())) #开始时间 CP56Time2a 格式
+        self.props.append(MsgDesc('JSSJ', 'CP56Time', 7, CP56Time())) #结束时间 CP56Time2a 格式
+        self.props.append(MsgDesc('JQSZ', 'I', 4, 0)) #尖起示值 精确到小数点后二位
+        self.props.append(MsgDesc('JZSZ', 'I', 4, 0)) #尖止示值 精确到小数点后二位
+        self.props.append(MsgDesc('FQSZ', 'I', 4, 0)) #峰起示值 精确到小数点后二位
+        self.props.append(MsgDesc('FZSZ', 'I', 4, 0)) #峰止示值 精确到小数点后二位
+        self.props.append(MsgDesc('PQSZ', 'I', 4, 0)) #平起示值 精确到小数点后二位
+        self.props.append(MsgDesc('PZSZ', 'I', 4, 0)) #平止示值 精确到小数点后二位
+        self.props.append(MsgDesc('GQSZ', 'I', 4, 0)) #谷起示值 精确到小数点后二位
+        self.props.append(MsgDesc('GZSZ', 'I', 4, 0)) #谷止示值 精确到小数点后二位
+        self.props.append(MsgDesc('JDL', 'I', 4, 0)) #尖电量 精确到小数点后二位
+        self.props.append(MsgDesc('FDL', 'I', 4, 0)) #峰电量 精确到小数点后二位
+        self.props.append(MsgDesc('PDL', 'I', 4, 0)) #平电量 精确到小数点后二位
+        self.props.append(MsgDesc('GDL', 'I', 4, 0)) #谷电量 精确到小数点后二位
+        self.props.append(MsgDesc('ZDL', 'I', 4, 0)) #总电量 精确到小数点后二位
+        self.props.append(MsgDesc('JLSSLX', 'BCD', 2, 0)) #计量示数类型 0001-里程 0002-充电量 0003-放电量
+        self.props.append(MsgDesc('BCJLSS', 'I', 4, 0)) #本次计量示数 精确到小数点后二位，不需 要填写
+        self.props.append(MsgDesc('SCJLSS', 'I', 4, 0)) #上次计量示数 精确到小数点后二位，不需 要填写
+        self.props.append(MsgDesc('SCCHDZBH', 'BCD', 5, 0)) #上次充换电站 编号 9位部门编码 离散充电桩 附加集中器模式上传桩编 号前 5 位，不需要填写
+        self.props.append(MsgDesc('SCYWLX', 'BCD', 2, 0)) #上次业务类型 0001-充电 0002-换电，不 需要填写
+        self.props.append(MsgDesc('DDQCWYBS', 'STR', 32, 0)) #电动汽车唯一 标识 32 位编码 前五位是组织机构编码，不 需要填写
+        self.props.append(MsgDesc('JGE', 'I', 4, 0)) #尖金额 精确到小数点后两位
+        self.props.append(MsgDesc('FJE', 'I', 4, 0)) #峰金额 精确到小数点后两位
+        self.props.append(MsgDesc('PJE', 'I', 4, 0)) #平金额 精确到小数点后两位
+        self.props.append(MsgDesc('GJE', 'I', 4, 0)) #谷金额 精确到小数点后两位
+        self.props.append(MsgDesc('ZJE', 'I', 4, 0)) #总金额 精确到小数点后二位
+        self.props.append(MsgDesc('DDCCPHM', 'STR', 18, 0)) #电动车车牌号 码 18 位字符串，GBK 编码
+        self.props.append(MsgDesc('CDQBH', 'B', 1, 0)) #充电枪编号 充电枪编号
+        self.props.append(MsgDesc('YYLSH', 'STR', 20, '')) #预约流水号 预约流水号
+        self.props.append(MsgDesc('SJJYY', 'STR', 16, '')) #数据校验域 见 6.3 安全校验域的计算 方法
 
-class XFBZFLSJ(BaseCMD):
-    def unpack(self, data):
-        self.SXSJ = data[0:7]
-        self.SXSJ = data[7:14]
-        self.ZXZT = data[14:16]
-        self.JLLX = data[16:18]
-        self.JDJ = data[18:22]
-        self.FDJ = data[22:26]
-        self.PDJ = data[26:30]
-        self.GDJ = data[30:34]
-        return data[34:]
+class SCJYSJ(BaseMsg):
+    '''5.7.4离线交易上线后上传交易记录数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '0123456701234567')) #终端机器编码 16 位设备编码
+        self.props.append(MsgDesc('JYLSH', 'BCD', 16, '')) #交易流水号 32 位交易代码
+        self.props.append(MsgDesc('YHBH', 'BCD', 8, '')) #用户编号 16 位设备编码,不需要填写
+        self.props.append(MsgDesc('LJKH', 'BCD', 8, '')) #逻辑卡号 16 位编码
+        self.props.append(MsgDesc('LXJYLX', 'BCD', 1, '')) #离线交易类型 1:交流充电 2:换电 3: 直流充电
+        self.props.append(MsgDesc('KSSJ', 'CP56Time', 7, CP56Time())) #开始时间 CP56Time2a 格式
+        self.props.append(MsgDesc('JSSJ', 'CP56Time', 7, CP56Time())) #结束时间 CP56Time2a 格式
+        self.props.append(MsgDesc('JQSZ', 'I', 4, 0)) #尖起示值 精确到小数点后二位
+        self.props.append(MsgDesc('JZSZ', 'I', 4, 0)) #尖止示值 精确到小数点后二位
+        self.props.append(MsgDesc('FQSZ', 'I', 4, 0)) #峰起示值 精确到小数点后二位
+        self.props.append(MsgDesc('FZSZ', 'I', 4, 0)) #峰止示值 精确到小数点后二位
+        self.props.append(MsgDesc('PQSZ', 'I', 4, 0)) #平起示值 精确到小数点后二位
+        self.props.append(MsgDesc('PZSZ', 'I', 4, 0)) #平止示值 精确到小数点后二位
+        self.props.append(MsgDesc('GQSZ', 'I', 4, 0)) #谷起示值 精确到小数点后二位
+        self.props.append(MsgDesc('GZSZ', 'I', 4, 0)) #谷止示值 精确到小数点后二位
+        self.props.append(MsgDesc('JLLX', 'BCD', 2, 0)) #计量类型 0001-里程 0002-充 电量 0003-放电量
+        self.props.append(MsgDesc('BCJLSS', 'I', 4, 0)) #本次计量示数 精确到小数点后二位
+        self.props.append(MsgDesc('SCJLSS', 'I', 4, 0)) #上次计量示数 精确到小数点后二位
+        self.props.append(MsgDesc('GDL', 'I', 4, 0)) #尖电量 精确到小数点后二位
+        self.props.append(MsgDesc('GGE', 'I', 4, 0)) #尖金额 精确到小数点后两位
+        self.props.append(MsgDesc('FDL', 'I', 4, 0)) #峰电量 精确到小数点后二位
+        self.props.append(MsgDesc('FJE', 'I', 4, 0)) #峰金额 精确到小数点后两位
+        self.props.append(MsgDesc('PDL', 'I', 4, 0)) #平电量 精确到小数点后二位
+        self.props.append(MsgDesc('PJE', 'I', 4, 0)) #平金额 精确到小数点后两位
+        self.props.append(MsgDesc('GDL', 'I', 4, 0)) #谷电量 精确到小数点后二位
+        self.props.append(MsgDesc('GJE', 'I', 4, 0)) #谷金额 精确到小数点后两位
+        self.props.append(MsgDesc('ZDL', 'I', 4, 0)) #总电量 精确到小数点后二位
+        self.props.append(MsgDesc('YWLX', 'BCD', 2, 0)) #业务类型 0001-交流充电 0002-换电 0003 直 流充电
+        self.props.append(MsgDesc('XFSZ', 'I', 4, 0)) #消费数值 精确到小数点后二位
+        self.props.append(MsgDesc('XFDJ', 'I', 4, 0)) #消费单价 精确到小数点后二位
+        self.props.append(MsgDesc('XFJE', 'I', 4, 0)) #消费金额 精确到小数点后两位
+        self.props.append(MsgDesc('DDQCWYBS', 'STR', 32, 0)) #电动汽车唯一 标识 32 位编码 前五位是组织机构编码
+        self.props.append(MsgDesc('DDCCPHM', 'STR', 18, 0)) #电动车车牌号 码 18 位字符串，GBK 编码
+        self.props.append(MsgDesc('CDQBH', 'B', 1, 0)) #充电枪编号 充电枪编号
+        self.props.append(MsgDesc('SJJYY', 'STR', 16, '')) #数据校验域 见 6.3 安全校验域的计算 方法
 
-class JQXXSJ(BaseCMD):
-    def unpack(self, data):
-        self.ZDJQBM = data[0:8]
-        self.LJKH = data[8:16]
-        self.DDQCWYBS = data[16:48]
-        self.JFMXBM = data[48:56]
-        self.KKHKYE = data[56:60]
-        self.JQCGBZ = data[60:61]
-        self.JQSBYY = data[61:63]
-        self.SYLC = data[63:67]
-        self.SYDL = data[67:71]
-        self.SYCS = data[71:75]
-        self.DDCCPHM = data[75:93]
-        self.CDQBH = data[93:94]
-        self.YYBH = data[94:104]
-        self.SJJYY = data[104:114]
-        return data[114:]
+class HMDXFSJ(BaseMsg):
+    '''5.7.5黑名单下发时下行数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('LJKH', 'BCD', 8, '')) #逻辑卡号 16 位编码
+        self.props.append(MsgDesc('ZT', 'BCD', 2, '0123')) #状态 0001-挂失 0002-解挂
+        self.props.append(MsgDesc('ZHGXSJ', 'CP56Time', 7, CP56Time())) #最后更新时间 CP56Time2a 格式
+        self.props.append(MsgDesc('DDCCPHM', 'STR', 18, 0)) #电动车车牌号 码 18 位字符串，GBK 编码
 
-class KKHXXSJ(BaseCMD):
-    def unpack(self, data):
-        self.ZDJQBM = data[0:8]
-        self.LJKH = data[8:16]
-        self.KKJE = data[16:20]
-        self.ZHYE = data[20:24]
-        self.KKCGBZ = data[24:25]
-        self.KKSBYY = data[25:27]
-        self.KCLC = data[27:31]
-        self.SYLC = data[31:35]
-        self.KCDL = data[35:39]
-        self.SYDL = data[39:43]
-        self.KCCS = data[43:47]
-        self.SYCS = data[47:51]
-        self.DDCCPHM = data[51:69]
-        self.CDQBH = data[69:70]
-        self.SJJYY = data[70:76]
-        return data[76:]
+class XFBZFLSJ(BaseMsg):
+    '''5.7.6下发标准费率'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('SXSJ', 'CP56Time', 7, CP56Time())) #生效时间 CP56Time2a 格式
+        self.props.append(MsgDesc('SXSJ', 'CP56Time', 7, CP56Time())) #失效时间 CP56Time2a 格式
+        self.props.append(MsgDesc('ZXZT', 'BCD', 2, '0123')) #执行状态 0001-有效 0002-无效
+        self.props.append(MsgDesc('JLLX', 'BCD', 2, '0123')) #计量类型 0001-里程 0002-充电 量 0003-放电量
+        self.props.append(MsgDesc('JDJ', 'I', 4, 0)) #尖电价 精确到小数点后五位
+        self.props.append(MsgDesc('FDJ', 'I', 4, 0)) #峰电价 精确到小数点后五位
+        self.props.append(MsgDesc('PDJ', 'I', 4, 0)) #平电价 精确到小数点后五位
+        self.props.append(MsgDesc('GDJ', 'I', 4, 0)) #谷电价 精确到小数点后五位
 
-class CSSJ(BaseCMD):
-    def unpack(self, data):
-        self.CSDM = data[0:2]
-        self.CSZCD = data[2:3]
-        self.CSZ = data[3:67]
-        return data[67:]
+class JQXXSJ(BaseMsg):
+    '''5.7.7鉴权下行/APP 充电激活数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '0123456701234567')) #终端机器编码 16 位设备编码
+        self.props.append(MsgDesc('LJKH', 'BCD', 8, '')) #逻辑卡号 16 位编码
+        self.props.append(MsgDesc('DDQCWYBS', 'STR', 32, 0)) #电动汽车唯一 标识 32 位编码 前五位是组织机构编码
+        self.props.append(MsgDesc('JFMXBM', 'BCD', 8, '')) #计费模型编码 8 位编码
+        self.props.append(MsgDesc('KKHKYE', 'I', 4, 0)) #扣款后卡余额 精确到小数点后两位
+        self.props.append(MsgDesc('JQCGBZ', 'B', 1, 0)) #鉴权成功标志 布尔型(1，鉴权成功; 0，鉴权失败)
+        self.props.append(MsgDesc('JQSBYY', 'BCD', 2, '')) #鉴权失败原因 0000-成功 0001-账户余额不足 0002-套餐余额不足 0003-非法用户 0004- 挂失卡 0005-车卡不 匹配
+        self.props.append(MsgDesc('SYLC', 'I', 4, 0)) #剩余里程 精确到小数点后两位
+        self.props.append(MsgDesc('SYDL', 'I', 4, 0)) #剩余电量 精确到小数点后两位
+        self.props.append(MsgDesc('SYCS', 'I', 4, 0)) #剩余次数 精确到小数点后两位
+        self.props.append(MsgDesc('DDCCPHM', 'STR', 18, '')) #电动车车牌号码 18 位字符串
+        self.props.append(MsgDesc('CDQBH', 'B', 1, 0)) #充电枪编号 0-255，0 表示单枪， 多枪时从 1 开始编号
+        self.props.append(MsgDesc('YYBH', 'BCD', 10, '')) #预约编号 20 位预约编号
+        self.props.append(MsgDesc('SJJYY', 'STR', 16, '')) #数据校验域 见 6.3 安全校验域的 计算方法
 
-class FDDLSDSZ(BaseCMD):
-    def unpack(self, data):
-        self.JDLKSSJ1 = data[0:2]
-        self.JDLJSSJ1 = data[2:4]
-        self.JDLKSSJ2 = data[4:6]
-        self.JDLJSSJ2 = data[6:8]
-        self.FDLKSSJ1 = data[8:10]
-        self.FDLJSSJ1 = data[10:12]
-        self.FDLKSSJ2 = data[12:14]
-        self.FDLJSSJ2 = data[14:16]
-        self.PDLKSSJ1 = data[16:18]
-        self.PDLJSSJ1 = data[18:20]
-        self.PDLKSSJ2 = data[20:22]
-        self.PDLJSSJ2 = data[22:24]
-        self.GDLKSSJ1 = data[24:26]
-        self.GDLJSSJ1 = data[26:28]
-        self.GDLKSSJ2 = data[28:30]
-        self.GDLJSSJ2 = data[30:32]
-        return data[32:]
+class KKHXXSJ(BaseMsg):
+    '''5.7.8扣款后下行数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '0123456701234567')) #终端机器编码 16 位设备编码
+        self.props.append(MsgDesc('LJKH', 'BCD', 8, '')) #逻辑卡号 16 位编码
+        self.props.append(MsgDesc('KKJE', 'I', 4, 0)) #扣款金额 精确到小数点后两位
+        self.props.append(MsgDesc('ZHYE', 'I', 4, 0)) #帐户余额 精确到小数点后两位
+        self.props.append(MsgDesc('KKCGBZ', 'B', 1, 0)) #扣款成功标志 布尔型,(1，扣款成功， 0 扣款失败)
+        self.props.append(MsgDesc('KKSBYY', 'BCD', 2, '')) #扣款失败原因 0000-成功 0001-账户余额不足 0002-套餐余额不足 0003-交易相同 0004- 挂失卡 0005-车卡不 匹配
+        self.props.append(MsgDesc('KCLC', 'I', 4, 0)) #扣除里程 精确到小数点后两位
+        self.props.append(MsgDesc('SYLC', 'I', 4, 0)) #剩余里程 精确到小数点后两位
+        self.props.append(MsgDesc('KCDL', 'I', 4, 0)) #扣除电量 精确到小数点后两位
+        self.props.append(MsgDesc('SYDL', 'I', 4, 0)) #剩余电量 精确到小数点后两位
+        self.props.append(MsgDesc('KCCS', 'I', 4, 0)) #扣除次数 精确到小数点后两位
+        self.props.append(MsgDesc('SYCS', 'I', 4, 0)) #剩余次数 精确到小数点后两位
+        self.props.append(MsgDesc('DDCCPHM', 'STR', 18, '')) #电动车车牌号码 18 位字符串
+        self.props.append(MsgDesc('CDQBH', 'B', 1, 0)) #充电枪编号 0-255，0 表示单枪， 多枪时从 1 开始编号
+        self.props.append(MsgDesc('SJJYY', 'STR', 16, '')) #数据校验域 见 6.3 安全校验域的 计算方法
 
-class CDYYXXSJ(BaseCMD):
-    def unpack(self, data):
-        self.JYLSH = data[0:10]
-        self.ZDJQBM = data[10:18]
-        self.YHKH = data[18:26]
-        self.CPHM = data[26:44]
-        self.CDLX = data[44:45]
-        self.CDQBH = data[45:46]
-        self.YYKSSJ = data[46:53]
-        self.YYCDCL = data[53:55]
-        self.YYCDCS = data[55:57]
-        return data[57:]
+class CSSJ(BaseMsg):
+    '''5.7.9参数数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('CSDM', 'BCD', 2, '')) #参数代码 见表 5-35 中代码
+        self.props.append(MsgDesc('CSZCD', 'B', 1, 0)) #参数值长度 参数实际长度
+        self.props.append(MsgDesc('CSZ', 'STR', 64, '')) #参数值 实际长度见表 5-35，不 够 64bytes 在后面补零
 
-class CDYYSXSJ(BaseCMD):
-    def unpack(self, data):
-        self.JYLSH = data[0:10]
-        self.ZDJQBM = data[10:18]
-        self.YHKH = data[18:26]
-        self.CPHM = data[26:44]
-        self.CDLX = data[44:45]
-        self.CDQBH = data[45:46]
-        self.YYKSSJ = data[46:53]
-        self.YYCDCL = data[53:55]
-        self.YYCDCS = data[55:57]
-        self.YYJG = data[57:59]
-        return data[59:]
+class FDDLSDSZ(BaseMsg):
+    '''5.7.10分段电量时段设置'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('JDLKSSJ1', 'BCD', 2, '')) #尖电量时段开始时间 1
+        self.props.append(MsgDesc('JDLJSSJ1', 'BCD', 2, '')) #尖电量时段结束时间 1
+        self.props.append(MsgDesc('JDLKSSJ2', 'BCD', 2, '')) #尖电量时段开始时间 2
+        self.props.append(MsgDesc('JDLJSSJ2', 'BCD', 2, '')) #尖电量时段结束时间 2
+        self.props.append(MsgDesc('FDLKSSJ1', 'BCD', 2, '')) #峰电量时段开始时间 1
+        self.props.append(MsgDesc('FDLJSSJ1', 'BCD', 2, '')) #峰电量时段结束时间 1
+        self.props.append(MsgDesc('FDLKSSJ2', 'BCD', 2, '')) #峰电量时段开始时间 2
+        self.props.append(MsgDesc('FDLJSSJ2', 'BCD', 2, '')) #峰电量时段结束时间 2
+        self.props.append(MsgDesc('PDLKSSJ1', 'BCD', 2, '')) #平电量时段开始时间 1
+        self.props.append(MsgDesc('PDLJSSJ1', 'BCD', 2, '')) #平电量时段结束时间 1
+        self.props.append(MsgDesc('PDLKSSJ2', 'BCD', 2, '')) #平电量时段开始时间 2
+        self.props.append(MsgDesc('PDLJSSJ2', 'BCD', 2, '')) #平电量时段结束时间 2
+        self.props.append(MsgDesc('GDLKSSJ1', 'BCD', 2, '')) #谷电量时段开始时间 1
+        self.props.append(MsgDesc('GDLJSSJ1', 'BCD', 2, '')) #谷电量时段结束时间 1
+        self.props.append(MsgDesc('GDLKSSJ2', 'BCD', 2, '')) #谷电量时段开始时间 2
+        self.props.append(MsgDesc('GDLJSSJ2', 'BCD', 2, '')) #谷电量时段结束时间 2
 
-class QXYYXXSJ(BaseCMD):
-    def unpack(self, data):
-        self.JYLSH = data[0:10]
-        self.ZDJQBM = data[10:18]
-        self.YHKH = data[18:26]
-        self.CPHM = data[26:44]
-        self.CDLX = data[44:45]
-        self.CDQBH = data[45:46]
-        self.YYKSSJ = data[46:53]
-        self.YYCDCL = data[53:55]
-        self.YYCDCS = data[55:57]
-        return data[57:]
+class CDYYXXSJ(BaseMsg):
+    '''5.7.11充电预约下行数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('JYLSH', 'BCD', 10, '')) #交易流水号 20 位交易代码，预约号
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '')) #终端机器编码 16 位设备编码
+        self.props.append(MsgDesc('YHKH', 'BCD', 8, '')) #用户卡号 16 位卡号或账户
+        self.props.append(MsgDesc('CPHM', 'STR', 18, '')) #车牌号码 车牌号码 GBK 编码
+        self.props.append(MsgDesc('CDLX', 'B', 1, 0)) #充电类型 0 交流充电 1 直流充电 2 不限类型
+        self.props.append(MsgDesc('CDQBH', 'B', 1, 0)) #充电枪编号 0 不限或者单枪 其它表示具体的枪编号
+        self.props.append(MsgDesc('YYKSSJ', 'CP56Time', 7, CP56Time())) #预约开始时间 cp56time2a 各式
+        self.props.append(MsgDesc('YYCDCL', 'BCD', 2, '')) #预约充电策略 0 充满为止 1 预约电度 2 预约时间 3 预约充电电量
+        self.props.append(MsgDesc('YYCDCS', 'H', 2, 0)) #预约策略参数 策略 1 时表示电度，单位 kwh，2 时间，单位分钟， 3 充电电量，单位 ah(安时)
 
-class QXYYSXSJ(BaseCMD):
-    def unpack(self, data):
-        self.JYLSH = data[0:10]
-        self.ZDJQBM = data[10:18]
-        self.YHKH = data[18:26]
-        self.CPHM = data[26:44]
-        self.CDLX = data[44:45]
-        self.CDQBH = data[45:46]
-        self.YYKSSJ = data[46:53]
-        self.YYCDCL = data[53:55]
-        self.YYCDCS = data[55:57]
-        self.QXJG = data[57:59]
-        return data[59:]
+class CDYYSXSJ(BaseMsg):
+    '''5.7.12充电预约上行数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('JYLSH', 'BCD', 10, '')) #交易流水号 20 位交易代码，预约号
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '')) #终端机器编码 16 位设备编码
+        self.props.append(MsgDesc('YHKH', 'BCD', 8, '')) #用户卡号 16 位卡号或账户
+        self.props.append(MsgDesc('CPHM', 'STR', 18, '')) #车牌号码 车牌号码 GBK 编码
+        self.props.append(MsgDesc('CDLX', 'B', 1, 0)) #充电类型 0 交流充电 1 直流充电 2 不限类型
+        self.props.append(MsgDesc('CDQBH', 'B', 1, 0)) #充电枪编号 0 不限或者单枪 其它表示具体的枪编号
+        self.props.append(MsgDesc('YYKSSJ', 'CP56Time', 7, CP56Time())) #预约开始时间 cp56time2a 各式
+        self.props.append(MsgDesc('YYCDCL', 'BCD', 2, '')) #预约充电策略 0 充满为止 1 预约电度 2 预约时间 3 预约充电电量
+        self.props.append(MsgDesc('YYCDCS', 'H', 2, 0)) #预约策略参数 策略 1 时表示电度，单位 kwh，2 时间，单位分钟， 3 充电电量，单位 ah(安时)
+        self.props.append(MsgDesc('YYJG', 'BCD', 2, '')) #预约结果 0000 预约成功 0003 已经被预约或预约 时间冲突 其它错误码见 5.4.4.7
 
-class YYCXXXSJ(BaseCMD):
-    def unpack(self, data):
-        self.JYLSH = data[0:10]
-        self.ZDJQBM = data[10:18]
-        self.YHKH = data[18:26]
-        self.CPHM = data[26:44]
-        self.YYKSSJ = data[44:51]
-        return data[51:]
+class QXYYXXSJ(BaseMsg):
+    '''5.7.13取消预约下行数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('JYLSH', 'BCD', 10, '')) #交易流水号 20 位交易代码，预约号
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '')) #终端机器编码 16 位设备编码
+        self.props.append(MsgDesc('YHKH', 'BCD', 8, '')) #用户卡号 16 位卡号或账户
+        self.props.append(MsgDesc('CPHM', 'STR', 18, '')) #车牌号码 车牌号码 GBK 编码
+        self.props.append(MsgDesc('CDLX', 'B', 1, 0)) #充电类型 0 交流充电 1 直流充电 2 不限类型
+        self.props.append(MsgDesc('CDQBH', 'B', 1, 0)) #充电枪编号 0 不限或者单枪 其它表示具体的枪编号
+        self.props.append(MsgDesc('YYKSSJ', 'CP56Time', 7, CP56Time())) #预约开始时间 cp56time2a 各式
+        self.props.append(MsgDesc('YYCDCL', 'BCD', 2, '')) #预约充电策略 0 充满为止 1 预约电度 2 预约时间 3 预约充电电量
+        self.props.append(MsgDesc('YYCDCS', 'H', 2, 0)) #预约策略参数 策略 1 时表示电度，单位 kwh，2 时间，单位分钟， 3 充电电量，单位 ah(安时)
 
-class YYCXSXSJ(BaseCMD):
-    def unpack(self, data):
-        self.JYLSH = data[0:10]
-        self.ZDJQBM = data[10:18]
-        self.YHKH = data[18:26]
-        self.CPHM = data[26:44]
-        self.CDLX = data[44:45]
-        self.CDQBH = data[45:46]
-        self.YYKSSJ = data[46:53]
-        self.YYCDCL = data[53:55]
-        self.YYCDCS = data[55:57]
-        self.CXJG = data[57:59]
-        return data[59:]
+class QXYYSXSJ(BaseMsg):
+    '''5.7.14取消预约上行数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('JYLSH', 'BCD', 10, '')) #交易流水号 20 位交易代码，预约号
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '')) #终端机器编码 16 位设备编码
+        self.props.append(MsgDesc('YHKH', 'BCD', 8, '')) #用户卡号 16 位卡号或账户
+        self.props.append(MsgDesc('CPHM', 'STR', 18, '')) #车牌号码 车牌号码 GBK 编码
+        self.props.append(MsgDesc('CDLX', 'B', 1, 0)) #充电类型 0 交流充电 1 直流充电 2 不限类型
+        self.props.append(MsgDesc('CDQBH', 'B', 1, 0)) #充电枪编号 0 不限或者单枪 其它表示具体的枪编号
+        self.props.append(MsgDesc('YYKSSJ', 'CP56Time', 7, CP56Time())) #预约开始时间 cp56time2a 各式
+        self.props.append(MsgDesc('YYCDCL', 'BCD', 2, '')) #预约充电策略 0 充满为止 1 预约电度 2 预约时间 3 预约充电电量
+        self.props.append(MsgDesc('YYCDCS', 'H', 2, 0)) #预约策略参数 策略 1 时表示电度，单位 kwh，2 时间，单位分钟， 3 充电电量，单位 ah(安时)
+        self.props.append(MsgDesc('QXJG', 'BCD', 2, '')) #取消结果代码 0000 取消成功 0001 预约已经失效 0002 预约号错误，取消 失败
+
+class YYCXXXSJ(BaseMsg):
+    '''5.7.15预约查询下行数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('JYLSH', 'BCD', 10, '')) #交易流水号 20 位交易代码，预约号
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '')) #终端机器编码 16 位设备编码
+        self.props.append(MsgDesc('YHKH', 'BCD', 8, '')) #用户卡号 16 位卡号或账户
+        self.props.append(MsgDesc('CPHM', 'STR', 18, '')) #车牌号码 车牌号码 GBK 编码
+        self.props.append(MsgDesc('YYKSSJ', 'CP56Time', 7, CP56Time())) #预约开始时间 cp56time2a 各式
+
+class YYCXSXSJ(BaseMsg):
+    '''5.7.16预约查询上行数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('JYLSH', 'BCD', 10, '')) #交易流水号 20 位交易代码，预约号
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '')) #终端机器编码 16 位设备编码
+        self.props.append(MsgDesc('YHKH', 'BCD', 8, '')) #用户卡号 16 位卡号或账户
+        self.props.append(MsgDesc('CPHM', 'STR', 18, '')) #车牌号码 车牌号码 GBK 编码
+        self.props.append(MsgDesc('CDLX', 'B', 1, 0)) #充电类型 0 交流充电 1 直流充电 2 不限类型
+        self.props.append(MsgDesc('CDQBH', 'B', 1, 0)) #充电枪编号 0 不限或者单枪 其它表示具体的枪编号
+        self.props.append(MsgDesc('YYKSSJ', 'CP56Time', 7, CP56Time())) #预约开始时间 cp56time2a 各式
+        self.props.append(MsgDesc('YYCDCL', 'BCD', 2, '')) #预约充电策略 0 充满为止 1 预约电度 2 预约时间 3 预约充电 电量
+        self.props.append(MsgDesc('YYCDCS', 'BCD', 2, '')) #预约充电策略参数 策略 1 时表示电度，单位 kwh，2 时间，单位分钟， 3 充电电量，单位 ah(安时)
+        self.props.append(MsgDesc('CXJG', 'BCD', 2, '')) #查询结果 0000 预约查询成功 0001 预约不存在 其它错误码见 5.4.4.7
 
 
-class JHCDSXSJ(BaseCMD):
-    def unpack(self, data):
-        self.ZDJQBM = data[0:8]
-        self.LJKH = data[8:16]
-        self.DDCCPHM = data[16:34]
-        self.CDLX = data[34:35]
-        self.CDQBH = data[35:36]
-        self.JRCDZTCGBZ = data[36:37]
-        self.JRCDZTCGBZSBYY = data[37:39]
-        return data[39:]
+class JHCDSXSJ(BaseMsg):
+    '''5.7.17 APP 激活充电上行数据(APP 专用)(133 指令)'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '')) #终端机器编码 16 位设备编码
+        self.props.append(MsgDesc('LJKH', 'BCD', 8, '')) #用户卡号 16 位编码
+        self.props.append(MsgDesc('DDCCPHM', 'STR', 18, '')) #电动车车牌号码 18 位字符串
+        self.props.append(MsgDesc('CDLX', 'B', 1, 0)) #充电类型 0 交流充电 1 直流充 电
+        self.props.append(MsgDesc('CDQBH', 'B', 1, 0)) #充电枪编号 充电枪编号，0 单枪， 其它表示具体编号
+        self.props.append(MsgDesc('JRCDZTCGBZ', 'B', 1, 0)) #进入充电状态成功标 志 布尔型,(1 成功，0 失 败)
+        self.props.append(MsgDesc('JRCDZTCGBZSBYY', 'BCD', 2, '')) #进入充电状态失败原因代码 0000-成功 0001-正在充电 0002-设备故障
 
-class RJSJJHXXSJ(BaseCMD):
-    def unpack(self, data):
-        self.ZDJQBM = data[0:8]
-        self.RJBB = data[8:10]
-        self.DWJDX = data[10:14]
-        self.GWJDX = data[14:18]
-        self.DWJJYM = data[18:50]
-        self.GWJJYM = data[50:82]
-        self.WJDM = data[82:114]
-        self.WJMC = data[114:178]
-        return data[178:]
+class RJSJJHXXSJ(BaseMsg):
+    '''5.7.18软件升级激活下行数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '')) #终端机器编码 16 位设备编码
+        self.props.append(MsgDesc('RJBB', 'BCD', 2, '')) #软件版本 4 位编码
+        self.props.append(MsgDesc('DWJDX', 'I', 4, 0)) #低位文件大小 整数，文件大小，单位: Byte
+        self.props.append(MsgDesc('GWJDX', 'I', 4, 0)) #高位文件大小 整数，文件大小，单位: Byte
+        self.props.append(MsgDesc('DWJJYM', 'STR', 32, '')) #低位文件校验码 文件内容做 MD5 HASH
+        self.props.append(MsgDesc('GWJJYM', 'STR', 32, '')) #高位文件校验码 文件内容做 MD5 HASH
+        self.props.append(MsgDesc('WJDM', 'STR', 32, '')) #文件代码 文件代码
+        self.props.append(MsgDesc('WJMC', 'STR', 64, '')) #文件名称 文件名称
 
-class RJSJJHSXSJ(BaseCMD):
-    def unpack(self, data):
-        self.ZDJQBM = data[0:8]
-        self.RJBB = data[8:10]
-        self.WJDM = data[10:42]
-        return data[42:]
+class RJSJJHSXSJ(BaseMsg):
+    '''5.7.19软件升级激活确认上行数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '')) #终端机器编码 16 位设备编码
+        self.props.append(MsgDesc('RJBB', 'BCD', 2, '')) #软件版本 4 位编码
+        self.props.append(MsgDesc('WJDM', 'STR', 32, '')) #文件代码 文件代码
 
-class DZRJSJSXSJ(BaseCMD):
-    def unpack(self, data):
-        self.ZDJQBM = data[0:8]
-        self.RJBB = data[8:10]
-        self.WJDM = data[10:42]
-        self.GDWBJ = data[42:43]
-        self.PYL = data[43:47]
-        self.length = data[47:51]
-        return data[51:]
+class DZRJSJSXSJ(BaseMsg):
+    '''5.7.20电桩软件升级上行请求数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '')) #终端机器编码 16 位设备编码
+        self.props.append(MsgDesc('RJBB', 'BCD', 2, '')) #软件版本 4 位编码
+        self.props.append(MsgDesc('WJDM', 'STR', 32, '')) #文件代码 文件代码
+        self.props.append(MsgDesc('GDWBJ', 'B', 1, 0)) #高低位文件标志 0 低位，1 高位
+        self.props.append(MsgDesc('PYL', 'I', 4, 0)) #偏移量 从文件起始的为止的 偏移量,第一帧数据为 0
+        self.props.append(MsgDesc('length', 'I', 4, 0)) #长度 本次请求数据长度,保 证应答帧的总长度不 超过 255Bytes
 
-class RJSJXXYDSJ(BaseCMD):
-    def unpack(self, data):
-        self.ZDJQBM = data[0:8]
-        self.PYL = data[8:12]
-        self.WJNRCD = data[12:16]
-        self.DATA = data[16:16 + self.WJNRCD]
-        self.CRC = data[16 + self.WJNRCD:16 + self.WJNRCD + 2]
-        return data[16 + self.WJNRCD + 2:]
+class RJSJXXYDSJ(BaseMsg):
+    '''5.7.21软件升级下行应答数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '')) #终端机器编码 16 位设备编码
+        self.props.append(MsgDesc('PYL', 'I', 4, 0)) #偏移量 从文件起始的为止的 偏移量,第一帧数据为 0
+        self.props.append(MsgDesc('WJNRCD', 'I', 4, 0)) #文件内容长度 本次应答数据长度
+        self.props.append(MsgDesc('DATA', 'STR', 0, '')) #数据内容 按照 WJNRCD 应答，文 件不存在或者其它错 误以及到达文件末尾 原因时，文件内容长度 为0
+        self.props.append(MsgDesc('CRC', 'H', 2, 0)) #数据 CRC 校验 应答数据的 CRC16 校验 值
 
-class GZMSQHXXSJ(BaseCMD):
-    def unpack(self, data):
-        self.ZDJQBM = data[0:8]
-        self.GZMS = data[8:10]
-        return data[10:]
+        #self.DATA = data[16:16 + self.WJNRCD]
+        #self.CRC = data[16 + self.WJNRCD:16 + self.WJNRCD + 2]
+        #return data[16 + self.WJNRCD + 2:]
 
-class GZMSQHSXSJ(BaseCMD):
-    def unpack(self, data):
-        self.ZDJQBM = data[0:8]
-        self.GZMS = data[8:10]
-        self.MSQHJG = data[10:12]
-        return data[12:]
+class GZMSQHXXSJ(BaseMsg):
+    '''5.7.22工作模式切换下行数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '')) #终端机器编码 16 位设备编码
+        self.props.append(MsgDesc('GZMS', 'BCD', 2, '')) #工作模式 4 位编码 0001 工作模式 0002 管理模式
 
-class GZMSCXXXSJ(BaseCMD):
-    def unpack(self, data):
-        self.ZDJQBM = data[0:8]
-        return data[8:]
+class GZMSQHSXSJ(BaseMsg):
+    '''5.7.23工作模式切换上行数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '')) #终端机器编码 16 位设备编码
+        self.props.append(MsgDesc('GZMS', 'BCD', 2, '')) #工作模式 4 位编码 0001 工作模式 0002 管理模式
+        self.props.append(MsgDesc('MSQHJG', 'BCD', 2, '')) #模式切换结果 模式切换结果 0000 成功 0001 升级过程中不能切换 0002 充电过程中不允许切换 0003 预约中不能切换为管理模式 0099 其它错误
 
-class GZMSCXSXSJ(BaseCMD):
-    def unpack(self, data):
-        self.ZDJQBM = data[0:8]
-        self.GZMS = data[8:10]
-        return data[10:]
+class GZMSCXXXSJ(BaseMsg):
+    '''5.7.24工作模式查询下行数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '')) #终端机器编码 16 位设备编码
 
-class ZDSBSJ(BaseCMD):
-    def unpack(self, data):
-        self.ZDJQBM = data[0:8]
-        self.XXDM = data[8:9]
-        self.CDQBH = data[9:10]
-        return data[10:]
+class GZMSCXSXSJ(BaseMsg):
+    '''5.7.25工作模式查询上行数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '')) #终端机器编码 16 位设备编码
+        self.props.append(MsgDesc('GZMS', 'BCD', 2, '')) #工作模式 4 位编码 0001 工作模式 0002 管理模式
 
-class ZXXFJS(BaseCMD):
-    def unpack(self, data):
-        self.ZDJQBM = data[0:8]
-        self.YHKH = data[8:16]
-        self.XXDM = data[16:17]
-        self.CDQBH = data[17:18]
-        return data[18:]
+class ZDSBSJ(BaseMsg):
+    '''5.7.26主动上报数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '')) #终端机器编码 16 位设备编码
+        self.props.append(MsgDesc('XXDM', 'B', 1, 0)) #消息代码
+        self.props.append(MsgDesc('CDQBH', 'B', 1, 0)) #充电枪编号 0 表示单枪或者不需要
 
-class ZXQZJS(BaseCMD):
-    def unpack(self, data):
-        self.ZDJQBM = data[0:8]
-        self.YHKH = data[8:16]
-        self.XXDM = data[16:17]
-        self.CDQBH = data[17:18]
-        return data[18:]
+class ZXXFJS(BaseMsg):
+    '''5.7.27中心下发结束充电/开锁数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '')) #终端机器编码 16 位设备编码
+        self.props.append(MsgDesc('YHKH', 'BCD', 8, '')) #用户卡号 16 用户卡号/账号
+        self.props.append(MsgDesc('XXDM', 'B', 1, 0)) #消息代码 定义见 5.4.5
+        self.props.append(MsgDesc('CDQBH', 'B', 1, 0)) #充电枪编号 0 表示单枪或者不需要
 
+class ZXQZJS(BaseMsg):
+    '''5.7.28中心强制结束充电数据'''
+    def __init__(self):
+        BaseMsg.__init__(self)
+        self.props.append(MsgDesc('ZDJQBM', 'BCD', 8, '')) #终端机器编码 16 位设备编码
+        self.props.append(MsgDesc('YHKH', 'BCD', 8, '')) #用户卡号 16 用户卡号/账号
+        self.props.append(MsgDesc('XXDM', 'B', 1, 0)) #消息代码 0xFF
+        self.props.append(MsgDesc('CDQBH', 'B', 1, 0)) #充电枪编号 0 表示单枪或者不需要
 
 class BaseProtocol:
 

@@ -30,7 +30,7 @@ class BaseCMD:
         rst = 0
         _len = len(tmp)
         s = ''.join(tmp)
-        return int(s)
+        return  int(s)
 
 
     def encode_bcd(self, value):
