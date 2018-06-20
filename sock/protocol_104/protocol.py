@@ -608,6 +608,7 @@ class M_ME_NA_1(ASDU):
         ASDU.__init__(self)
 
     def unpack(self, data):
+        data = ASDU.unpack(self, data)
         if self.SQ == 0:
             return self.unpack_sq0(data)
         else:
@@ -648,6 +649,7 @@ class M_IT_NA_1(ASDU):
         ASDU.__init__(self)
 
     def unpack(self, data):
+        data = ASDU.unpack(self, data)
         if self.SQ == 0:
             return self.unpack_sq0(data)
         else:
@@ -686,38 +688,29 @@ class M_RE_NA_1(ASDU):#unparse
         ASDU.__init__(self)
 
     def unpack(self, data):
+        data = ASDU.unpack(self, data)
         if self.SQ == 0:
             return self.unpack_sq0(data)
         else:
-            return self.unpack_sq1(data)
-
-    def unpack_sq1(self, data):
-        ia = self.get_info_addr(data[0:3])
-        self.info_addrs.append(ia)
-        i = 0
-        step = 4
-        end = 3
-        while i <= self.info_num:
-            record_type = struct.unpack(BYTE_ORDER + 'B', data[3 + i * step : 6 + i * step])
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
+            print("M_RE_NA_1 unpack error SQ == 1")
 
     def unpack_sq0(self, data):
-        i = 0
-        step = 7
-        end = 0
-        while i <= self.info_num:
-            ia = self.get_info_addr(data[0 + i * step : 3 + i + step])
-            self.info_addrs.append(ia)
-            value = data[3 + i * step : 6 + i * step]
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
+        t = struct.unpack('B', data[0])[0]
+        if t == 1:
+            #<1> :=鉴权数据包
+            d = JQSJ()
+            rst = d.unpack(data[1:])
+            pass
+        elif t == 2:
+            #<2> :=在线情况下停止充电时上传记录数据
+            d = TZCDSJ()
+            rst = d.unpack(data[1:])
+            pass
+        elif t == 3:
+            #<3> :=离线交易上线后上传交易记录数据
+            d = SCJYSJ()
+            rst = d.unpack(data[1:])
+        return rst
 
 class M_CM_NA_1(ASDU):#unparse
 
@@ -725,44 +718,48 @@ class M_CM_NA_1(ASDU):#unparse
         ASDU.__init__(self)
 
     def unpack(self, data):
+        data = ASDU.unpack(self, data)
         if self.SQ == 0:
             return self.unpack_sq0(data)
         else:
-            return self.unpack_sq1(data)
-
-    def unpack_sq1(self, data):
-        ia = self.get_info_addr(data[0:3])
-        self.info_addrs.append(ia)
-        i = 0
-        step = 4
-        end = 3
-        while i <= self.info_num:
-            record_type = struct.unpack(BYTE_ORDER + 'B', data[3 + i * step : 6 + i * step])
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
+            print("M_CM_NA_1 unpack error SQ == 1")
 
     def unpack_sq0(self, data):
-        i = 0
-        step = 7
-        end = 0
-        while i <= self.info_num:
-            ia = self.get_info_addr(data[0 + i * step : 3 + i + step])
-            self.info_addrs.append(ia)
-            value = data[3 + i * step : 6 + i * step]
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
+        t = struct.unpack('B', data[0])[0]
+        if t == 1:
+            #<1> :=分箱式充电机计量数据
+            pass
+        elif t == 2:
+            #<2> :=换电机器人统计数据
+            pass
+        elif t == 3:
+            #<3> :=充电架统计数据
+            pass
+        elif t == 4:
+            #<4> :=在线换电机器换电业务计量数据
+            pass
+        elif t == 5:
+            #<5> :=电池箱统计数据
+            pass
+        elif t == 6:
+            #<6> :=鉴权数据包
+            pass
+        elif t == 7:
+            #<7> :=车辆地理信息数据
+            pass
+        elif t == 8:
+            #<8> :=车辆电池箱数据
+            pass
+        elif t == 9:
+            #<9> :=电池箱实时监测数据
+            pass
 
 class M_MD_NA_1(ASDU):
     def __init__(self):
         ASDU.__init__(self)
 
     def unpack(self, data):
+        data = ASDU.unpack(self, data)
         if self.SQ == 0:
             return self.unpack_sq0(data)
         else:
@@ -772,523 +769,331 @@ class M_MD_NA_1(ASDU):
         ia = self.get_info_addr(data[0:3])
         self.info_addrs.append(ia)
         i = 0
-        step = 4
-        end = 3
+        offset = 3
         while i <= self.info_num:
-            record_type = struct.unpack(BYTE_ORDER + 'B', data[3 + i * step : 6 + i * step])
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
+            vlen = struct.unpack('B', data[offset])[0]
+            value = data[offset + 1 : offset + 1 + vlen]
+            info = struct.unpack('B', data[offset + 1 + vlen])[0]
+            offset = offset + 1 + vlen + 1
             self.infos.append(info)
             i = i + 1
-        return data[end:]
+        return data[offset:]
 
     def unpack_sq0(self, data):
+        offset = 0
         i = 0
-        step = 7
-        end = 0
         while i <= self.info_num:
-            ia = self.get_info_addr(data[0 + i * step : 3 + i + step])
+            ia = self.get_info_addr(data[offset : offset + 3])
             self.info_addrs.append(ia)
-            value = data[3 + i * step : 6 + i * step]
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
+            vlen = struct.unpack('B', data[offset + 3])[0]
+            value = data[offset + 4 : offset + 4 + vlen]
+            info = struct.unpack(BYTE_ORDER + 'B', data[offset + 4 + vlen])[0]
+            offset = offset + 4 + vlen + 1
             self.infos.append(info)
             i = i + 1
-        return data[end:]
+        return data[offset:]
 
 class M_SD_NA_1(ASDU):
     def __init__(self):
         ASDU.__init__(self)
 
     def unpack(self, data):
+        data = ASDU.unpack(self, data)
         if self.SQ == 0:
             return self.unpack_sq0(data)
         else:
-            return self.unpack_sq1(data)
+            print("M_SD_NA_1 unpack error SQ == 1")
 
     def unpack_sq0(self, data):
-        ia = self.get_info_addr(data[0:3])
-        self.info_addrs.append(ia)
-        i = 0
-        step = 4
-        end = 3
-        while i <= self.info_num:
-            record_type = struct.unpack(BYTE_ORDER + 'B', data[3 + i * step : 6 + i * step])
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
-
-    def unpack_sq1(self, data):
-        i = 0
-        step = 7
-        end = 0
-        while i <= self.info_num:
-            ia = self.get_info_addr(data[0 + i * step : 3 + i + step])
-            self.info_addrs.append(ia)
-            value = data[3 + i * step : 6 + i * step]
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
+        t = struct.unpack('B', data[0])[0]
+        if t == 1:
+            #<1> :=黑名单下发时下行数据
+            d = HMDXFSJ()
+            rst = d.unpack(data[1:])
+        elif t == 2:
+            #<2> :=下发标准费率
+            d = XFBZFLSJ()
+            rst = d.unpack(data[1:])
+        elif t == 3:
+            #<3> :=充电鉴权下行数据
+            pass
+        elif t == 4:
+            #<4> :=充电扣款后下行数据
+            pass
+        elif t == 5:
+            #<5> :=换电鉴权下行数据
+            pass
+        elif t == 6:
+            #<6> :=换电扣款后下行数据
+            pass
+        elif t == 7:
+            #<7> :=车载终端下行数据
+            pass
+        return rst
 
 class M_JC_NA_1(ASDU):
     def __init__(self):
         ASDU.__init__(self)
 
     def unpack(self, data):
+        data = ASDU.unpack(self, data)
         if self.SQ == 0:
             return self.unpack_sq0(data)
         else:
-            return self.unpack_sq1(data)
+            print("M_JC_NA_1 unpack error SQ == 1")
 
     def unpack_sq0(self, data):
-        ia = self.get_info_addr(data[0:3])
-        self.info_addrs.append(ia)
-        i = 0
-        step = 4
-        end = 3
-        while i <= self.info_num:
-            record_type = struct.unpack(BYTE_ORDER + 'B', data[3 + i * step : 6 + i * step])
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
+        t = struct.unpack('B', data[0])[0]
+        if t == 1:
+            #<1> :=离散充电过程实时监测数据
+            pass
+        elif t == 2:
+            #<2> := app 充电电桩上行数据
+            pass
+        return rst
 
-    def unpack_sq1(self, data):
-        i = 0
-        step = 7
-        end = 0
-        while i <= self.info_num:
-            ia = self.get_info_addr(data[0 + i * step : 3 + i + step])
-            self.info_addrs.append(ia)
-            value = data[3 + i * step : 6 + i * step]
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
-
+#5.4.4在控制方向过程信息的应用服务数据单元
 class C_IC_NA_1(ASDU):
     def __init__(self):
         ASDU.__init__(self)
 
     def unpack(self, data):
-        if self.SQ == 0:
-            return self.unpack_sq0(data)
-        else:
-            return self.unpack_sq1(data)
-
-    def unpack_sq0(self, data):
-        ia = self.get_info_addr(data[0:3])
-        self.info_addrs.append(ia)
-        i = 0
-        step = 4
-        end = 3
-        while i <= self.info_num:
-            record_type = struct.unpack(BYTE_ORDER + 'B', data[3 + i * step : 6 + i * step])
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
-
-    def unpack_sq1(self, data):
-        i = 0
-        step = 7
-        end = 0
-        while i <= self.info_num:
-            ia = self.get_info_addr(data[0 + i * step : 3 + i + step])
-            self.info_addrs.append(ia)
-            value = data[3 + i * step : 6 + i * step]
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
+        data = ASDU.unpack(self, data)
+        self.info_addrs.append(0)
+        qoi = QOI()
+        qoi.unpack(data)
+        return data[1:]
 
 class C_CI_NA_1(ASDU):
     def __init__(self):
         ASDU.__init__(self)
 
     def unpack(self, data):
-        if self.SQ == 0:
-            return self.unpack_sq0(data)
-        else:
-            return self.unpack_sq1(data)
-
-    def unpack_sq0(self, data):
-        ia = self.get_info_addr(data[0:3])
-        self.info_addrs.append(ia)
-        i = 0
-        step = 4
-        end = 3
-        while i <= self.info_num:
-            record_type = struct.unpack(BYTE_ORDER + 'B', data[3 + i * step : 6 + i * step])
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
-
-    def unpack_sq1(self, data):
-        i = 0
-        step = 7
-        end = 0
-        while i <= self.info_num:
-            ia = self.get_info_addr(data[0 + i * step : 3 + i + step])
-            self.info_addrs.append(ia)
-            value = data[3 + i * step : 6 + i * step]
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
+        data = ASDU.unpack(self, data)
+        self.info_addrs.append(0)
+        qcc = QCC()
+        qcc.unpack(data)
+        return data[1:]
 
 class C_CS_NA_1(ASDU):
     def __init__(self):
         ASDU.__init__(self)
 
     def unpack(self, data):
-        if self.SQ == 0:
-            return self.unpack_sq0(data)
-        else:
-            return self.unpack_sq1(data)
-
-    def unpack_sq0(self, data):
-        ia = self.get_info_addr(data[0:3])
-        self.info_addrs.append(ia)
-        i = 0
-        step = 4
-        end = 3
-        while i <= self.info_num:
-            record_type = struct.unpack(BYTE_ORDER + 'B', data[3 + i * step : 6 + i * step])
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
-
-    def unpack_sq1(self, data):
-        i = 0
-        step = 7
-        end = 0
-        while i <= self.info_num:
-            ia = self.get_info_addr(data[0 + i * step : 3 + i + step])
-            self.info_addrs.append(ia)
-            value = data[3 + i * step : 6 + i * step]
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
+        data = ASDU.unpack(self, data)
+        t = CP56Time()
+        t.unpack(data)
+        return data[7:]
 
 class C_RP_NA_1(ASDU):
     def __init__(self):
         ASDU.__init__(self)
 
     def unpack(self, data):
-        if self.SQ == 0:
-            return self.unpack_sq0(data)
-        else:
-            return self.unpack_sq1(data)
-
-    def unpack_sq0(self, data):
-        ia = self.get_info_addr(data[0:3])
-        self.info_addrs.append(ia)
-        i = 0
-        step = 4
-        end = 3
-        while i <= self.info_num:
-            record_type = struct.unpack(BYTE_ORDER + 'B', data[3 + i * step : 6 + i * step])
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
-
-    def unpack_sq1(self, data):
-        i = 0
-        step = 7
-        end = 0
-        while i <= self.info_num:
-            ia = self.get_info_addr(data[0 + i * step : 3 + i + step])
-            self.info_addrs.append(ia)
-            value = data[3 + i * step : 6 + i * step]
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
+        data = ASDU.unpack(self, data)
+        self.info_addrs.append(0)
+        return data[1:]
 
 class C_CD_NA_1(ASDU):
     def __init__(self):
         ASDU.__init__(self)
 
     def unpack(self, data):
-        if self.SQ == 0:
-            return self.unpack_sq0(data)
-        else:
-            return self.unpack_sq1(data)
-
-    def unpack_sq0(self, data):
-        ia = self.get_info_addr(data[0:3])
-        self.info_addrs.append(ia)
-        i = 0
-        step = 4
-        end = 3
-        while i <= self.info_num:
-            record_type = struct.unpack(BYTE_ORDER + 'B', data[3 + i * step : 6 + i * step])
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
-
-    def unpack_sq1(self, data):
-        i = 0
-        step = 7
-        end = 0
-        while i <= self.info_num:
-            ia = self.get_info_addr(data[0 + i * step : 3 + i + step])
-            self.info_addrs.append(ia)
-            value = data[3 + i * step : 6 + i * step]
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
+        data = ASDU.unpack(self, data)
+        t = struct.unpack('B', data[0])[0]
+        if t == 0:
+            #0: 电桩主动上送信息， 数据定义见附表 5.7.26 表 5-53 中心收到后 回复 确认帧
+            pass
+        elif t == 1:
+            #1: 中心下发停止充电指令 数据定义见附表 5.7.27
+            pass
+        elif t == 2:
+            #2: 中心下发强制停止充电指令 数据定义见附表 5.7.28
+            pass
+        return rst
 
 class P_AC_NA_1(ASDU):
     def __init__(self):
         ASDU.__init__(self)
 
     def unpack(self, data):
+        data = ASDU.unpack(self, data)
         if self.SQ == 0:
             return self.unpack_sq0(data)
         else:
-            return self.unpack_sq1(data)
+            print("")
 
     def unpack_sq0(self, data):
-        ia = self.get_info_addr(data[0:3])
-        self.info_addrs.append(ia)
-        i = 0
-        step = 4
-        end = 3
-        while i <= self.info_num:
-            record_type = struct.unpack(BYTE_ORDER + 'B', data[3 + i * step : 6 + i * step])
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
-
-    def unpack_sq1(self, data):
-        i = 0
-        step = 7
-        end = 0
-        while i <= self.info_num:
-            ia = self.get_info_addr(data[0 + i * step : 3 + i + step])
-            self.info_addrs.append(ia)
-            value = data[3 + i * step : 6 + i * step]
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
+        t = struct.unpack('B', data[0])[0]
+        if t == 1:
+            #1:读取参数数据，下行
+            pass
+        elif t == 2:
+            #2:读取参数返回数据，上行
+            pass
+        elif t == 3:
+            #3:设置参数数据，下行
+            pass
+        elif t == 4:
+            #4:设置参数返回数据
+            pass
+        return rst
+        
 
 class P_AB_NA_1(ASDU):
     def __init__(self):
         ASDU.__init__(self)
 
     def unpack(self, data):
+        data = ASDU.unpack(self, data)
         if self.SQ == 0:
             return self.unpack_sq0(data)
         else:
-            return self.unpack_sq1(data)
+            print("")
 
     def unpack_sq0(self, data):
-        ia = self.get_info_addr(data[0:3])
-        self.info_addrs.append(ia)
-        i = 0
-        step = 4
-        end = 3
-        while i <= self.info_num:
-            record_type = struct.unpack(BYTE_ORDER + 'B', data[3 + i * step : 6 + i * step])
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
-
-    def unpack_sq1(self, data):
-        i = 0
-        step = 7
-        end = 0
-        while i <= self.info_num:
-            ia = self.get_info_addr(data[0 + i * step : 3 + i + step])
-            self.info_addrs.append(ia)
-            value = data[3 + i * step : 6 + i * step]
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
+        t = struct.unpack('B', data[0])[0]
+        if t == 1:
+            #<1>: = 预约下行数据
+            d = CDYYXXSJ()
+            rst = d.unpack(data[1:])
+        elif t == 2:
+            #<2>: = 预约上行数据
+            d = CDYYSXSJ()
+            rst = d.unpack(data[1:])
+        elif t == 3:
+            #<3>: = 取消下行数据
+            d = QXYYXXSJ()
+            rst = d.unpack(data[1:])
+        elif t == 4:
+            #<4>: = 取消上行数据
+            d = QXYYSXSJ()
+            rst = d.unpack(data[1:])
+        elif t == 5:
+            #<5>: = 查询下行数据
+            d = YYCXXXSJ()
+            rst = d.unpack(data[1:])
+        elif t == 6:
+            #<6>: = 查询上行数据
+            d = YYCXSXSJ()
+            rst = d.unpack(data[1:])
+        return rst
 
 class P_AF_NA_1(ASDU):
     def __init__(self):
         ASDU.__init__(self)
 
     def unpack(self, data):
+        data = ASDU.unpack(self, data)
         if self.SQ == 0:
             return self.unpack_sq0(data)
         else:
-            return self.unpack_sq1(data)
+            print("")
 
     def unpack_sq0(self, data):
-        ia = self.get_info_addr(data[0:3])
-        self.info_addrs.append(ia)
-        i = 0
-        step = 4
-        end = 3
-        while i <= self.info_num:
-            record_type = struct.unpack(BYTE_ORDER + 'B', data[3 + i * step : 6 + i * step])
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
-
-    def unpack_sq1(self, data):
-        i = 0
-        step = 7
-        end = 0
-        while i <= self.info_num:
-            ia = self.get_info_addr(data[0 + i * step : 3 + i + step])
-            self.info_addrs.append(ia)
-            value = data[3 + i * step : 6 + i * step]
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
+        t = struct.unpack('B', data[0])[0]
+        if t == 1:
+            #<1>: = 蓝牙状态
+            pass
+        elif t == 2:
+            #<2>: = 打开蓝牙
+            pass
+        elif t == 3:
+            #<3>: = 关闭蓝牙
+            pass
+        elif t == 4:
+            #<4>: = 其它数据
+            pass
+        return rst
 
 class P_AD_NA_1(ASDU):
     def __init__(self):
         ASDU.__init__(self)
 
     def unpack(self, data):
+        data = ASDU.unpack(self, data)
         if self.SQ == 0:
             return self.unpack_sq0(data)
         else:
-            return self.unpack_sq1(data)
+            print("")
 
     def unpack_sq0(self, data):
-        ia = self.get_info_addr(data[0:3])
-        self.info_addrs.append(ia)
-        i = 0
-        step = 4
-        end = 3
-        while i <= self.info_num:
-            record_type = struct.unpack(BYTE_ORDER + 'B', data[3 + i * step : 6 + i * step])
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
-
-    def unpack_sq1(self, data):
-        i = 0
-        step = 7
-        end = 0
-        while i <= self.info_num:
-            ia = self.get_info_addr(data[0 + i * step : 3 + i + step])
-            self.info_addrs.append(ia)
-            value = data[3 + i * step : 6 + i * step]
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
+        t = struct.unpack('B', data[0])[0]
+        if t == 1:
+            #<1>: = 蓝牙状态
+            pass
+        elif t == 2:
+            #<2>: = 打开地锁
+            pass
+        elif t == 3:
+            #<3>: = 关闭地锁
+            pass
+        elif t == 4:
+            #<4>: = 其它数据
+            pass
+        return rst
 
 class P_AE_NA_1(ASDU):
     def __init__(self):
         ASDU.__init__(self)
 
     def unpack(self, data):
+        data = ASDU.unpack(self, data)
         if self.SQ == 0:
             return self.unpack_sq0(data)
         else:
-            return self.unpack_sq1(data)
+            print("")
 
     def unpack_sq0(self, data):
-        ia = self.get_info_addr(data[0:3])
-        self.info_addrs.append(ia)
-        i = 0
-        step = 4
-        end = 3
-        while i <= self.info_num:
-            record_type = struct.unpack(BYTE_ORDER + 'B', data[3 + i * step : 6 + i * step])
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
-
-    def unpack_sq1(self, data):
-        i = 0
-        step = 7
-        end = 0
-        while i <= self.info_num:
-            ia = self.get_info_addr(data[0 + i * step : 3 + i + step])
-            self.info_addrs.append(ia)
-            value = data[3 + i * step : 6 + i * step]
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1 
-        return data[end:]
+        t = struct.unpack('B', data[0])[0]
+        if t == 1:
+            #<1> := 软件升级激活下行数据
+            d = RJSJJHXXSJ()
+            rst = d.unpack(data[1:])
+        elif t == 2:
+            #<2> := 软件升级激活确认上行数据
+            d = RJSJJHSXSJ()
+            rst = d.unpack(data[1:])
+        elif t == 3:
+            #<3> := 软件升级上行请求数据
+            d = DZRJSJSXSJ()
+            rst = d.unpack(data[1:])
+        elif t == 4:
+            #<4> := 软件升级下行应答数据
+            d = RJSJXXYDSJ()
+            rst = d.unpack(data[1:])
+        return rst
 
 class P_WS_NA_1(ASDU):
     def __init__(self):
         ASDU.__init__(self)
 
     def unpack(self, data):
+        data = ASDU.unpack(self, data)
         if self.SQ == 0:
             return self.unpack_sq0(data)
         else:
-            return self.unpack_sq1(data)
+            print("")
 
     def unpack_sq0(self, data):
-        ia = self.get_info_addr(data[0:3])
-        self.info_addrs.append(ia)
-        i = 0
-        step = 4
-        end = 3
-        while i <= self.info_num:
-            record_type = struct.unpack(BYTE_ORDER + 'B', data[3 + i * step : 6 + i * step])
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
-
-    def unpack_sq1(self, data):
-        i = 0
-        step = 7
-        end = 0
-        while i <= self.info_num:
-            ia = self.get_info_addr(data[0 + i * step : 3 + i + step])
-            self.info_addrs.append(ia)
-            value = data[3 + i * step : 6 + i * step]
-            info = struct.unpack(BYTE_ORDER + 'B', data[6 + i * step : 7 + i * step])
-            end = 7 + i * step
-            self.infos.append(info)
-            i = i + 1
-        return data[end:]
+        t = struct.unpack('B', data[0])[0]
+        if t == 1:
+            #<1>: = 工作模式切换下行数据
+            d = GZMSQHXXSJ()
+            rst = d.unpack(data[1:])
+        elif t == 2:
+            #<2>: = 工作模式切换上行数据
+            d = GZMSQHSXSJ()
+            rst = d.unpack(data[1:])
+        elif t == 3:
+            #<3>: = 工作模式查询下行数据
+            d = GZMSCXXXSJ()
+            rst = d.unpack(data[1:])
+        elif t == 4:
+            #<4>: = 工作模式查询上行数据
+            d = GZMSCXSXSJ()
+            rst = d.unpack(data[1:])
+        return rst
 
 class MsgDesc:
     def __init__(self, name, t, length, default_value):
