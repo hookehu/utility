@@ -743,7 +743,8 @@ class M_CM_NA_1(ASDU):#unparse
             pass
         elif t == 6:
             #<6> :=鉴权数据包
-            pass
+            d = JQSJ()
+            rst = d.unpack(data[1:])
         elif t == 7:
             #<7> :=车辆地理信息数据
             pass
@@ -753,6 +754,7 @@ class M_CM_NA_1(ASDU):#unparse
         elif t == 9:
             #<9> :=电池箱实时监测数据
             pass
+        return rst
 
 class M_MD_NA_1(ASDU):
     def __init__(self):
@@ -846,7 +848,8 @@ class M_JC_NA_1(ASDU):
         t = struct.unpack('B', data[0])[0]
         if t == 1:
             #<1> :=离散充电过程实时监测数据
-            pass
+            d = CDSCSJ()
+            rst = d.unpack(data[1:])
         elif t == 2:
             #<2> := app 充电电桩上行数据
             pass
@@ -903,13 +906,16 @@ class C_CD_NA_1(ASDU):
         t = struct.unpack('B', data[0])[0]
         if t == 0:
             #0: 电桩主动上送信息， 数据定义见附表 5.7.26 表 5-53 中心收到后 回复 确认帧
-            pass
+            d = ZDSBSJ()
+            rst = d.unpack(data[1:])
         elif t == 1:
             #1: 中心下发停止充电指令 数据定义见附表 5.7.27
-            pass
+            d = ZXXFJS()
+            rst = d.unpack(data[1:])
         elif t == 2:
             #2: 中心下发强制停止充电指令 数据定义见附表 5.7.28
-            pass
+            d = ZXQZJS()
+            rst = d.unpack(data[1:])
         return rst
 
 class P_AC_NA_1(ASDU):
